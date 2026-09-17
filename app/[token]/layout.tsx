@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 
+import ApprovalReadout from "@/components/ApprovalReadout";
 import CostReadout from "@/components/CostReadout";
 import Navigation from "@/components/Navigation";
 import SyntheticDataStrip from "@/components/SyntheticDataStrip";
-import { spend } from "@/lib/drafts";
+import { approvals, spend } from "@/lib/drafts";
 
 // The cost readout is in the shell, so every screen under the gate reads it fresh.
 export const dynamic = "force-dynamic";
@@ -21,6 +22,7 @@ export default async function Shell({
 }) {
   const { token } = await params;
   const billed = await spend();
+  const decided = await approvals();
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -35,7 +37,10 @@ export default async function Shell({
                 Member retention across six sites
               </p>
             </div>
-            <CostReadout calls={billed.calls} cents={billed.cents} />
+            <div className="flex flex-wrap justify-end gap-x-8 gap-y-3">
+              <ApprovalReadout approved={decided.approved} edited={decided.edited} />
+              <CostReadout calls={billed.calls} cents={billed.cents} />
+            </div>
           </div>
           <Navigation token={token} />
         </div>

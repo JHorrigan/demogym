@@ -1,3 +1,5 @@
+import EditAgainstDraft from "@/components/EditAgainstDraft";
+
 import type { Draft } from "@/lib/drafts";
 
 /**
@@ -6,6 +8,11 @@ import type { Draft } from "@/lib/drafts";
  * The settings are on the message rather than in a tooltip, because a redraft sits
  * directly beneath the draft it replaced and the only useful comparison is between
  * the terms each was written on.
+ *
+ * Where a reviewer edited the message, the edit is shown in place of the original
+ * rather than beneath it. Both are still on the screen, because the struck words are
+ * the model's, and printing a hundred and twenty words twice on one panel makes the
+ * change harder to find rather than easier.
  *
  * The rationale is addressed to the reviewer and not to the member, so it is set
  * apart from the message rather than beneath it as though it were a sign-off.
@@ -19,7 +26,12 @@ export default function DraftedMessage({ draft }: { draft: Draft }) {
       </p>
 
       <p className="mt-3 text-sm font-semibold">{draft.subject}</p>
-      <p className="mt-2 max-w-prose text-sm leading-relaxed whitespace-pre-line">{draft.body}</p>
+
+      {draft.editedBody ? (
+        <EditAgainstDraft body={draft.body} edited={draft.editedBody} />
+      ) : (
+        <p className="mt-2 max-w-prose text-sm leading-relaxed whitespace-pre-line">{draft.body}</p>
+      )}
 
       <div className="bg-paper border-rule mt-4 max-w-prose border-l-2 px-3 py-2">
         <p className="label">Why it was written this way</p>

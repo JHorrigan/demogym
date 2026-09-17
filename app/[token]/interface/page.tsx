@@ -6,6 +6,8 @@ import Band from "@/components/Band";
 import Button from "@/components/Button";
 import DraftState from "@/components/DraftState";
 import { Cell, HeaderCell, Row, Table } from "@/components/Table";
+import Decision from "@/components/Decision";
+import EditAgainstDraft from "@/components/EditAgainstDraft";
 import Select from "@/components/Select";
 import { Empty, Failed, Loading } from "@/components/States";
 
@@ -95,6 +97,23 @@ export default function Interface() {
             ))}
           </tbody>
         </Table>
+      </Section>
+
+      <Section title="Decisions">
+        <div className="border-rule bg-raised flex flex-wrap gap-x-12 gap-y-4 border p-4">
+          <Decision decision="approved" decidedAt="2026-09-17T17:42:00Z" />
+          <Decision decision="edited" decidedAt="2026-09-17T17:44:00Z" />
+          <Decision decision="rejected" decidedAt="2026-09-17T17:46:00Z" />
+        </div>
+      </Section>
+
+      <Section title="An edit against what the model wrote">
+        <div className="border-rule bg-raised border px-4 pb-4">
+          <EditAgainstDraft
+            body={"Hello,\n\nWe have not seen you for a while and we hope everything is all right. Come back whenever suits you."}
+            edited={"Hello,\n\nWe have not seen you in a couple of weeks and wanted to check in. Come back whenever suits you."}
+          />
+        </div>
       </Section>
 
       <Section title="Reason strings">

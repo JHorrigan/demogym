@@ -19,13 +19,12 @@ from demogym.drafts import LOCAL, candidate, store
 from demogym.model import NO_CREDIT, UNREACHABLE, ModelFailed, generate
 from demogym.prompt import system, user
 
-TOKEN_HEADER = "x-demogym-token"
-
 FORBIDDEN = "forbidden"
 BAD_REQUEST = "bad request"
 UNKNOWN_MEMBER = "unknown member"
 NOT_AT_RISK = "not at risk"
 NO_DRAFTS_LEFT = "no drafts left"
+ALREADY_DECIDED = "already decided"
 
 STATUS = {
     FORBIDDEN: 401,
@@ -33,6 +32,7 @@ STATUS = {
     UNKNOWN_MEMBER: 404,
     NOT_AT_RISK: 409,
     NO_DRAFTS_LEFT: 409,
+    ALREADY_DECIDED: 409,
     DAILY_LIMIT: 429,
     NO_CREDIT: 402,
     UNREACHABLE: 503,
@@ -67,6 +67,11 @@ def respond(
                 NOT_AT_RISK,
                 f"Member {request.member_id} is {found.facts.band} band. "
                 "Only the High band is drafted for.",
+            )
+        if found.decided:
+            return _refuse(
+                ALREADY_DECIDED,
+                f"Member {request.member_id} has been decided, so there is nothing to redraft.",
             )
         if found.attempts >= MAXIMUM_ATTEMPTS:
             return _refuse(

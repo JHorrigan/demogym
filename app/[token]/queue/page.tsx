@@ -72,9 +72,9 @@ export default async function Queue({
             <div>
               <h2 className="text-lg font-semibold tracking-tight">High band</h2>
               <p className="text-ink-dim mt-1.5 max-w-2xl text-sm leading-relaxed">
-                The only members a message is drafted for. Nothing is written until somebody asks, and
-                nothing here is sent to anybody: a message that is approved is recorded as a decision
-                and goes no further.
+                The only members a message is drafted for. Nothing is written until somebody asks, a
+                person decides what happens to each message, and nothing here is sent to anybody: an
+                approval is recorded as a decision and goes no further.
               </p>
             </div>
 
@@ -130,8 +130,10 @@ export default async function Queue({
           ) : null}
 
           <p className="text-ink-dim max-w-3xl text-xs leading-relaxed">
-            The cost in the header is measured from the token counts the API returns on each call, in the
-            currency it bills in, and it is never estimated. Approve, Edit and Reject arrive in 012.
+            Approving records a decision and sends nothing. There is no outbound email, SMS or
+            messaging integration in this project, which is why a decided row says so on the row rather
+            than only in the header. The cost above is measured from the token counts the API returns on
+            each call, in the currency it bills in, and it is never estimated.
           </p>
         </>
       )}

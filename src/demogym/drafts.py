@@ -1,7 +1,8 @@
-"""Reading what a draft needs from the database, and writing the row it produced.
+"""The `drafts` table: what a draft needs, the row it produced, and what was decided.
 
 The scoring date is taken from the database rather than from the request, so a caller
-cannot ask for a draft against a week that is no longer current.
+cannot ask for a draft against a week that is no longer current. The attempt a
+decision lands on is taken the same way.
 """
 
 from dataclasses import dataclass
@@ -51,6 +52,25 @@ values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 """
 
 
+LATEST_DRAFT = """
+with latest as (
+    select max(scored_on) as scored_on from risk_scores
+)
+select d.scored_on, d.attempt, d.body, d.decision
+from drafts d, latest
+where d.scored_on = latest.scored_on
+  and d.member_id = %s
+order by d.attempt desc
+"""
+
+DECIDE = """
+update drafts
+set decision = %s, edited_body = %s, decided_at = now()
+where member_id = %s and scored_on = %s and attempt = %s
+returning decided_at
+"""
+
+
 @dataclass(frozen=True)
 class Candidate:
     """A member as the drafting endpoint sees them, at the current scoring date."""
@@ -58,6 +78,7 @@ class Candidate:
     facts: Facts
     scored_on: date
     attempts: int
+    decided: bool
 
 
 def candidate(connection: psycopg.Connection, member_id: int) -> Candidate | None:
@@ -80,9 +101,57 @@ def candidate(connection: psycopg.Connection, member_id: int) -> Candidate | Non
         scored_on=scored_on,
         visits=visits,
     )
+    latest = latest_draft(connection, member_id)
     return Candidate(
-        facts=facts, scored_on=scored_on, attempts=_attempts(connection, member_id, scored_on)
+        facts=facts,
+        scored_on=scored_on,
+        # Attempts run 1 then 2, so the newest attempt number is how many there are.
+        attempts=latest.attempt if latest else 0,
+        decided=latest.decided if latest else False,
     )
+
+
+@dataclass(frozen=True)
+class Latest:
+    """The most recent draft for one member, and whether anything was decided.
+
+    `decided` covers every attempt, not just this one: a decision is about the member
+    and there is only ever one.
+    """
+
+    scored_on: date
+    attempt: int
+    body: str
+    decided: bool
+
+
+def latest_draft(connection: psycopg.Connection, member_id: int) -> Latest | None:
+    """The member's newest draft at the current scoring date, or None if they have none."""
+    rows = connection.execute(LATEST_DRAFT, (member_id,)).fetchall()
+    if not rows:
+        return None
+
+    scored_on, attempt, body, _ = rows[0]
+    return Latest(
+        scored_on=scored_on,
+        attempt=attempt,
+        body=body,
+        decided=any(row[3] is not None for row in rows),
+    )
+
+
+def record(
+    connection: psycopg.Connection,
+    member_id: int,
+    latest: Latest,
+    action: str,
+    edited_body: str | None,
+) -> datetime:
+    """Writes the decision and returns the moment the database stamped it."""
+    row = connection.execute(
+        DECIDE, (action, edited_body, member_id, latest.scored_on, latest.attempt)
+    ).fetchone()
+    return row[0]
 
 
 def store(
@@ -116,11 +185,3 @@ def store(
 
 def _visits(connection: psycopg.Connection, member_id: int) -> list[datetime]:
     return [row[0] for row in connection.execute(VISITS, (member_id,)).fetchall()]
-
-
-def _attempts(connection: psycopg.Connection, member_id: int, scored_on: date) -> int:
-    row = connection.execute(
-        "select count(*) from drafts where member_id = %s and scored_on = %s",
-        (member_id, scored_on),
-    ).fetchone()
-    return row[0]

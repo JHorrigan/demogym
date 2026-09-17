@@ -8,7 +8,7 @@ import type { DraftStatus, Failure } from "@/components/DraftState";
 import MemberPanel, { type PanelRow } from "@/components/MemberPanel";
 import Select from "@/components/Select";
 
-import type { Draft } from "@/lib/drafts";
+import type { DecisionName, Draft } from "@/lib/drafts";
 
 const TONES = ["warm", "direct", "encouraging"] as const;
 const LENGTHS = ["short", "standard"] as const;
@@ -35,6 +35,15 @@ type Drafted = {
   body: string;
   rationale: string;
   cost_usd_cents: number;
+};
+
+/** What `decide_endpoint.respond` returns. Agreed by hand, checked by neither side. */
+type Decided = {
+  member_id: number;
+  attempt: number;
+  decision: DecisionName;
+  edited_body: string | null;
+  decided_at: string;
 };
 
 type Refused = { error: string; message: string };
@@ -69,6 +78,7 @@ export default function DraftQueue({
   );
   const [inFlight, setInFlight] = useState(0);
   const [remaining, setRemaining] = useState(0);
+  const [problems, setProblems] = useState<Record<number, string>>({});
 
   const undrafted = rows.filter((row) => (drafts[row.memberId] ?? []).length === 0);
   const sweeping = remaining > 0;
@@ -127,6 +137,41 @@ export default function DraftQueue({
     router.refresh();
   }
 
+  /**
+   * One decision, final for that member.
+   *
+   * The endpoint decides which attempt it lands on and stamps the time, so a stale
+   * page cannot record a decision against a draft that has been replaced.
+   */
+  async function decide(
+    memberId: number,
+    decision: DecisionName,
+    editedBody: string | null,
+  ): Promise<void> {
+    setProblems((current) => ({ ...current, [memberId]: "" }));
+
+    const payload = await tell(memberId, decision, editedBody, token);
+    if ("error" in payload) {
+      setProblems((current) => ({ ...current, [memberId]: payload.message }));
+      return;
+    }
+
+    setDrafts((current) => ({
+      ...current,
+      [memberId]: (current[memberId] ?? []).map((draft) =>
+        draft.attempt === payload.attempt
+          ? {
+              ...draft,
+              decision: payload.decision,
+              editedBody: payload.edited_body,
+              decidedAt: payload.decided_at,
+            }
+          : draft,
+      ),
+    }));
+    router.refresh();
+  }
+
   return (
     <div className="space-y-5">
       <div className="border-rule bg-raised border p-4">
@@ -182,7 +227,9 @@ export default function DraftQueue({
           failure={states[row.memberId]?.failure}
           drafts={drafts[row.memberId] ?? []}
           busy={sweeping}
+          problem={problems[row.memberId] || undefined}
           onDraft={() => draft(row.memberId, controls)}
+          onDecide={(decision, editedBody) => decide(row.memberId, decision, editedBody)}
         />
       ))}
     </div>
@@ -207,6 +254,26 @@ async function ask(memberId: number, terms: Controls, token: string): Promise<Dr
   } catch (unanswered) {
     console.error("the drafting endpoint did not answer", memberId, unanswered);
     return { error: "unreachable", message: "The call did not get through." };
+  }
+}
+
+/** The decision call. A refusal here is a disagreement about state, not a failure. */
+async function tell(
+  memberId: number,
+  decision: DecisionName,
+  editedBody: string | null,
+  token: string,
+): Promise<Decided | Refused> {
+  try {
+    const response = await fetch("/api/decide", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-demogym-token": token },
+      body: JSON.stringify({ member_id: memberId, decision, edited_body: editedBody }),
+    });
+    return await response.json();
+  } catch (unanswered) {
+    console.error("the decision endpoint did not answer", memberId, unanswered);
+    return { error: "unreachable", message: "The decision did not get through. Try again." };
   }
 }
 
@@ -253,5 +320,8 @@ function toDraft(payload: Drafted): Draft {
     body: payload.body,
     rationale: payload.rationale,
     costUsdCents: payload.cost_usd_cents,
+    decision: null,
+    editedBody: null,
+    decidedAt: null,
   };
 }

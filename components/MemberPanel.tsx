@@ -1,9 +1,11 @@
 import Band from "@/components/Band";
 import Button from "@/components/Button";
+import Decision from "@/components/Decision";
+import DecisionControls from "@/components/DecisionControls";
 import DraftState, { type DraftStatus, type Failure } from "@/components/DraftState";
 import DraftedMessage from "@/components/DraftedMessage";
 
-import type { Draft } from "@/lib/drafts";
+import type { DecisionName, Draft } from "@/lib/drafts";
 
 /**
  * One High-band member, with everything already formatted.
@@ -36,16 +38,22 @@ export default function MemberPanel({
   failure,
   drafts,
   busy,
+  problem,
   onDraft,
+  onDecide,
 }: {
   row: PanelRow;
   status: DraftStatus;
   failure?: Failure;
   drafts: Draft[];
   busy: boolean;
+  problem?: string;
   onDraft: () => void;
+  onDecide: (decision: DecisionName, editedBody: string | null) => void;
 }) {
-  const action = label(status, failure, drafts.length);
+  const latest = drafts.at(-1);
+  const decided = drafts.find((draft) => draft.decision !== null);
+  const action = decided ? null : label(status, failure, drafts.length);
 
   return (
     <section className="border-rule bg-raised border">
@@ -63,7 +71,11 @@ export default function MemberPanel({
       <p className="text-ink-dim mt-3 max-w-prose px-4 text-sm leading-relaxed">{row.reason}</p>
 
       <div className="border-rule mt-4 flex flex-wrap items-start justify-between gap-3 border-t px-4 py-3">
-        <DraftState status={status} failure={failure} />
+        {decided?.decision && decided.decidedAt ? (
+          <Decision decision={decided.decision} decidedAt={decided.decidedAt} />
+        ) : (
+          <DraftState status={status} failure={failure} />
+        )}
         {action ? (
           <Button onClick={onDraft} disabled={busy || status === "drafting"}>
             {action}
@@ -77,6 +89,15 @@ export default function MemberPanel({
             <DraftedMessage key={draft.attempt} draft={draft} />
           ))}
         </div>
+      ) : null}
+
+      {latest && !decided && status !== "drafting" ? (
+        <DecisionControls
+          body={latest.body}
+          busy={busy}
+          problem={problem}
+          onDecide={onDecide}
+        />
       ) : null}
     </section>
   );
