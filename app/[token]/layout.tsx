@@ -3,6 +3,10 @@ import type { ReactNode } from "react";
 import CostReadout from "@/components/CostReadout";
 import Navigation from "@/components/Navigation";
 import SyntheticDataStrip from "@/components/SyntheticDataStrip";
+import { spend } from "@/lib/drafts";
+
+// The cost readout is in the shell, so every screen under the gate reads it fresh.
+export const dynamic = "force-dynamic";
 
 /**
  * The shell every screen renders inside. The strip and the cost readout sit here
@@ -16,6 +20,7 @@ export default async function Shell({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
+  const billed = await spend();
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -30,7 +35,7 @@ export default async function Shell({
                 Member retention across six sites
               </p>
             </div>
-            <CostReadout calls={0} pence={0} />
+            <CostReadout calls={billed.calls} cents={billed.cents} />
           </div>
           <Navigation token={token} />
         </div>

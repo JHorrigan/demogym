@@ -1,11 +1,18 @@
+"use client";
+
+import { useState } from "react";
+
 import Band from "@/components/Band";
 import Button from "@/components/Button";
 import DraftState from "@/components/DraftState";
 import { Cell, HeaderCell, Row, Table } from "@/components/Table";
+import Select from "@/components/Select";
 import { Empty, Failed, Loading } from "@/components/States";
 
 /** Every primitive and every state, rendered, so the design language is inspectable. */
 export default function Interface() {
+  const [tone, setTone] = useState("warm");
+
   return (
     <div className="space-y-12">
       <div>
@@ -30,6 +37,25 @@ export default function Interface() {
           <Button tone="primary">Draft all</Button>
           <Button>Draft</Button>
           <Button disabled>Redraft</Button>
+        </div>
+      </Section>
+
+      <Section title="Dropdowns">
+        <div className="grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-3">
+          <Select
+            label="Tone"
+            value={tone}
+            options={["warm", "direct", "encouraging"]}
+            onChange={setTone}
+          />
+          <Select label="Length" value="standard" options={["short", "standard"]} onChange={() => {}} />
+          <Select
+            label="Offer"
+            value="none"
+            options={["none", "free class"]}
+            onChange={() => {}}
+            disabled
+          />
         </div>
       </Section>
 

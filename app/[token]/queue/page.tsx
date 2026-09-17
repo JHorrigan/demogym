@@ -1,8 +1,11 @@
 import Band from "@/components/Band";
+import DraftQueue from "@/components/DraftQueue";
+import type { PanelRow } from "@/components/MemberPanel";
 import SiteFilter from "@/components/SiteFilter";
 import { Cell, HeaderCell, Row, Table } from "@/components/Table";
 import { Empty } from "@/components/States";
-import { queueRows, siteCounts } from "@/lib/queue";
+import { storedDrafts } from "@/lib/drafts";
+import { queueRows, siteCounts, type QueueRow } from "@/lib/queue";
 
 export const dynamic = "force-dynamic";
 
@@ -21,9 +24,12 @@ export default async function Queue({
   const sites = await siteCounts();
   const selected = selectedSite(site, sites.map((option) => option.id));
   const rows = await queueRows(selected);
+  const stored = await storedDrafts();
 
+  const high = rows.filter((row) => row.band === "high");
+  const rest = rows.filter((row) => row.band !== "high");
   const counts = {
-    high: rows.filter((row) => row.band === "high").length,
+    high: high.length,
     medium: rows.filter((row) => row.band === "medium").length,
     low: rows.filter((row) => row.band === "low").length,
   };
@@ -62,45 +68,87 @@ export default async function Queue({
             <span className="figure">{counts.low}</span> Low.
           </p>
 
-          <Table caption="Members in a band, worst first">
-            <thead>
-              <tr>
-                <HeaderCell>Member</HeaderCell>
-                <HeaderCell>Band</HeaderCell>
-                <HeaderCell>Site</HeaderCell>
-                <HeaderCell numeric>Monthly</HeaderCell>
-                <HeaderCell numeric>Tenure</HeaderCell>
-                <HeaderCell>Why</HeaderCell>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <Row key={row.memberId}>
-                  <Cell>
-                    <span className="figure">{row.accountNumber}</span>
-                  </Cell>
-                  <Cell>
-                    <Band band={row.band} />
-                  </Cell>
-                  <Cell>{row.site}</Cell>
-                  <Cell numeric>{MONEY.format(row.monthlyPrice)}</Cell>
-                  <Cell numeric>{tenure(row.tenureDays, row.tenureMonths)}</Cell>
-                  <Cell wrap>{row.reason}</Cell>
-                </Row>
-              ))}
-            </tbody>
-          </Table>
+          <section className="space-y-4 pt-2">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight">High band</h2>
+              <p className="text-ink-dim mt-1.5 max-w-2xl text-sm leading-relaxed">
+                The only members a message is drafted for. Nothing is written until somebody asks, and
+                nothing here is sent to anybody: a message that is approved is recorded as a decision
+                and goes no further.
+              </p>
+            </div>
+
+            {high.length === 0 ? (
+              <Empty heading={`Nobody at ${siteName ?? "any site"} is in the High band`}>
+                There are members in a lower band below, and those carry a reason without a drafted
+                message. A message for a Low-band member is work nobody will do today.
+              </Empty>
+            ) : (
+              <DraftQueue token={token} rows={high.map(toPanelRow)} stored={stored} />
+            )}
+          </section>
+
+          {rest.length > 0 ? (
+            <section className="space-y-4 pt-4">
+              <div>
+                <h2 className="text-lg font-semibold tracking-tight">Medium and Low</h2>
+                <p className="text-ink-dim mt-1.5 max-w-2xl text-sm leading-relaxed">
+                  A band and a reason, and no drafted message. These are the rows worth watching rather
+                  than working.
+                </p>
+              </div>
+
+              <Table caption="Members in the Medium and Low bands, worst first">
+                <thead>
+                  <tr>
+                    <HeaderCell>Member</HeaderCell>
+                    <HeaderCell>Band</HeaderCell>
+                    <HeaderCell>Site</HeaderCell>
+                    <HeaderCell numeric>Monthly</HeaderCell>
+                    <HeaderCell numeric>Tenure</HeaderCell>
+                    <HeaderCell>Why</HeaderCell>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rest.map((row) => (
+                    <Row key={row.memberId}>
+                      <Cell>
+                        <span className="figure">{row.accountNumber}</span>
+                      </Cell>
+                      <Cell>
+                        <Band band={row.band} />
+                      </Cell>
+                      <Cell>{row.site}</Cell>
+                      <Cell numeric>{MONEY.format(row.monthlyPrice)}</Cell>
+                      <Cell numeric>{tenure(row.tenureDays, row.tenureMonths)}</Cell>
+                      <Cell wrap>{row.reason}</Cell>
+                    </Row>
+                  ))}
+                </tbody>
+              </Table>
+            </section>
+          ) : null}
 
           <p className="text-ink-dim max-w-3xl text-xs leading-relaxed">
-            High rows will carry the drafting controls in 011 and the Approve, Edit and Reject actions
-            in 012. Nothing has been drafted and nothing has been sent. Medium and Low rows carry a
-            band and a reason and will not carry a drafted message: a message for a Low-band member is
-            work nobody will do today.
+            The cost in the header is measured from the token counts the API returns on each call, in the
+            currency it bills in, and it is never estimated. Approve, Edit and Reject arrive in 012.
           </p>
         </>
       )}
     </div>
   );
+}
+
+/** Formatting happens here, so nothing in the browser reaches for the data layer. */
+function toPanelRow(row: QueueRow): PanelRow {
+  return {
+    memberId: row.memberId,
+    accountNumber: row.accountNumber,
+    site: row.site,
+    price: MONEY.format(row.monthlyPrice),
+    tenure: tenure(row.tenureDays, row.tenureMonths),
+    reason: row.reason,
+  };
 }
 
 /**

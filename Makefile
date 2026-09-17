@@ -1,4 +1,4 @@
-.PHONY: check lint test typecheck lint-web format migrate
+.PHONY: check lint test typecheck lint-web format migrate api
 
 check: lint test typecheck lint-web
 
@@ -18,6 +18,10 @@ lint-web:
 format:
 	uv run ruff format .
 	uv run ruff check --fix .
+
+# Runs the drafting endpoint locally. `next dev` proxies /api here.
+api:
+	uv run --env-file .env python scripts/serve_api.py
 
 # Applies pending migrations to the database named in the local environment file.
 migrate:

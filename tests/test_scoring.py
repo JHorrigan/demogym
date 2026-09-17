@@ -216,6 +216,18 @@ def test_no_visits_in_the_window_says_so_without_quoting_a_ratio() -> None:
     assert scored.gap_multiple is None
 
 
+def test_no_visits_in_the_window_still_says_when_they_last_came() -> None:
+    """A joiner can have nothing in their first four weeks and have come since.
+
+    The window sentence alone reads as never, and a message drafted from it sits
+    beside a last visit the member certainly made.
+    """
+    joined = SCORED_ON - timedelta(weeks=9)
+    scored = score([SCORED_ON - timedelta(days=19)], joined, SCORED_ON)
+
+    assert scored.reason == "No visits at all in their first four weeks. Last came 19 days ago."
+
+
 def test_a_member_whose_visits_all_predate_the_window_bands_high() -> None:
     scored = score(every(3, 20, SCORED_ON - timedelta(weeks=20)), SETTLED, SCORED_ON)
 

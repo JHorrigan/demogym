@@ -245,7 +245,10 @@ def _reason(
 ) -> str:
     """Names the reading that drove the band, with the numbers behind it."""
     if not in_window:
-        return f"No visits at all in {window.label}."
+        # A joiner can have nothing in their first four weeks and have come since.
+        # The window sentence on its own reads as never, which is a different claim.
+        since = f" Last came {_last_came(days_since)}." if days_since is not None else ""
+        return f"No visits at all in {window.label}.{since}"
 
     if banded == UNFLAGGED:
         return _steady_reason(baseline, recent_rate, decay, days_since, window)
