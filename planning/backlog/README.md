@@ -6,7 +6,6 @@ A slice is written out in full shortly before it is built. Detailing all of them
 
 | | Slice | Written | Produces |
 |---|---|---|---|
-| 002 | Deploy the application behind a link token | yes | A protected URL that deploys on push, and `standards/nextjs.md` |
 | 003 | Create the schema and the migration runner | yes | Seven tables in Neon |
 | 004 | Generate and seed the estate | yes | Sites, members and six months of entries |
 | 005 | Generate and seed the equipment | yes | Around a hundred units across the six sites |
@@ -22,13 +21,11 @@ A slice is written out in full shortly before it is built. Detailing all of them
 | 015 | Rewrite the README and write the running instructions | | A front door, and a way for someone else to run it |
 | 016 | Compare the drafting model | | A measured choice between the three candidates, recorded as an ADR |
 
-001 is done and sits in `completed/`. It settled the Python version the Vercel runtime offers, which `standards/python.md` had assumed.
+001 and 002 are done and sit in `completed/`. Between them they settled the Python version the Vercel runtime offers, and found that Vercel builds this repository as a Python project unless `vercel.json` says otherwise.
 
 ## Where the order comes from
 
-002 first of what remains because deployment is the thing most likely to go wrong late, and discovering that with three screens built is worse than discovering it with none.
-
-003 to 006 build the data and the arithmetic, in the only order they can go in. 006 is where the generator's spread gets tuned against the scoring thresholds, so 004 and 006 will be revisited together.
+003 first of what remains. 003 to 006 build the data and the arithmetic, in the only order they can go in. 006 is where the generator's spread gets tuned against the scoring thresholds, so 004 and 006 will be revisited together.
 
 007 sits between the data and the screens deliberately. Built after it, 008 and 009 are layout against decisions already made. Built without it, each screen invents its own look and the result reads as three different tools.
 
