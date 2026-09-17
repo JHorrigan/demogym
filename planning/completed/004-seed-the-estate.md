@@ -246,3 +246,25 @@ One thing changing the generator costs: any edit to the draw order reshuffles th
 every member draws from one shared random stream. Fixing the leaving-date bug moved the entry count from
 12,107 to 12,110 even though it only removed rows. Reproducibility holds for a given version of the code,
 not across versions.
+
+## Amended by 006
+
+The backlog said 004 and 006 would be revisited together, and they were. 006 changed the attendance
+model in `members.py` and reran every invariant test, which still pass.
+
+The habit weights moved from regular 26, weekday morning 14, occasional 38, fading 14, stopped 8 to
+regular 25, weekday morning 13, occasional 52, fading 7, stopped 3. The first mix put 58 members in the
+High band against a target of around twenty.
+
+The larger change was to how a member picks their days. Every habit now trains on a small set of days
+spaced across the week, chosen once per member, rather than by an independent draw each morning. Drawing
+each day independently clusters visits onto consecutive days, which made the median gap one day for
+thirty-two members and turned an ordinary two-day break into twice their usual gap. Spacing the days is
+both a better model of how people train and what makes the gap reading mean anything. The finding is
+recorded under `Still open` in the specification.
+
+A fading member's final share moved from 0.05 to 0.4 up to 0.15 to 0.6, so the depth of a fade spreads
+across all three bands rather than bunching every fading member into High.
+
+The entry count moved from 12,110 to 12,195, and the invariant range of 10,000 to 14,000 still holds.
+Measured across twelve seeds the mean is 11,328 and the range 10,604 to 12,230.

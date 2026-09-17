@@ -6,6 +6,7 @@ from pathlib import Path
 
 from demogym.database import connect
 from demogym.migrate import run
+from demogym.score import run as run_scoring
 from demogym.seed import SEED, existing_counts, replace
 
 MIGRATIONS = Path(__file__).resolve().parents[2] / "migrations"
@@ -21,11 +22,16 @@ def main() -> None:
     seed.add_argument("--as-of", type=date.fromisoformat, default=date.today())
     seed.add_argument("--seed", type=int, default=SEED)
 
+    scoring = commands.add_parser("score", help="score the estate at twelve weekly dates")
+    scoring.add_argument("--as-of", type=date.fromisoformat, default=date.today())
+
     arguments = parser.parse_args()
     if arguments.command == "migrate":
         migrate()
-    else:
+    elif arguments.command == "seed":
         seed_estate(arguments.as_of, arguments.seed)
+    else:
+        score_estate(arguments.as_of)
 
 
 def migrate() -> None:
@@ -56,3 +62,13 @@ def seed_estate(as_of: date, seed: int) -> None:
     print(f"Wrote {written.members} members.")
     print(f"Wrote {written.equipment} equipment units.")
     print(f"Wrote {written.entries} entries as of {as_of.isoformat()}, seed {seed}.")
+
+
+def score_estate(as_of: date) -> None:
+    """Scores the estate and reports how the most recent date came out."""
+    with connect() as connection:
+        scored = run_scoring(connection, as_of)
+
+    print(f"Wrote {scored.rows} scores across {scored.dates} weekly dates to {as_of.isoformat()}.")
+    for band in ("high", "medium", "low", "unflagged"):
+        print(f"  {band:10} {scored.latest.get(band, 0)}")

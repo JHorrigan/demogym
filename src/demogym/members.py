@@ -33,11 +33,11 @@ class Habit(StrEnum):
 # Weights across the population. The fading and stopped shares are what give the
 # scorer something to find; 006 tunes them against the band thresholds.
 HABIT_WEIGHTS = (
-    (Habit.REGULAR, 26),
-    (Habit.WEEKDAY_MORNING, 14),
-    (Habit.OCCASIONAL, 38),
-    (Habit.FADING, 14),
-    (Habit.STOPPED, 8),
+    (Habit.REGULAR, 25),
+    (Habit.WEEKDAY_MORNING, 13),
+    (Habit.OCCASIONAL, 52),
+    (Habit.FADING, 7),
+    (Habit.STOPPED, 3),
 )
 
 
@@ -128,6 +128,21 @@ def _left_on(joined_on: date, as_of: date, random: Random) -> date | None:
     return earliest + timedelta(days=random.randint(0, days))
 
 
+def _spread(count: int, among: tuple[int, ...], random: Random) -> tuple[int, ...]:
+    """`count` days spaced as evenly across `among` as it allows.
+
+    Days drawn independently cluster, which puts consecutive-day visits in the
+    majority and makes the median gap one day. A member who trains four times a
+    week goes every other day, so an ordinary two-day break is not twice their
+    usual gap. This is what keeps the gap reading meaningful.
+    """
+    start = random.randrange(len(among))
+    picked = {
+        among[(start + round(step * len(among) / count)) % len(among)] for step in range(count)
+    }
+    return tuple(sorted(picked))
+
+
 def _attendance(as_of: date, random: Random) -> Attendance:
     habit = random.choices(
         [habit for habit, _ in HABIT_WEIGHTS],
@@ -135,10 +150,11 @@ def _attendance(as_of: date, random: Random) -> Attendance:
     )[0]
 
     if habit is Habit.REGULAR:
+        rate = random.uniform(2.6, 4.3)
         return Attendance(
             habit=habit,
-            visits_per_week=random.uniform(2.8, 4.6),
-            days=ALL_DAYS,
+            visits_per_week=rate,
+            days=_spread(round(rate), ALL_DAYS, random),
             hour=random.choice(MORNING_HOURS + EVENING_HOURS),
             fade_from=None,
             final_share=1.0,
@@ -146,10 +162,11 @@ def _attendance(as_of: date, random: Random) -> Attendance:
         )
 
     if habit is Habit.WEEKDAY_MORNING:
+        rate = random.uniform(1.9, 3.1)
         return Attendance(
             habit=habit,
-            visits_per_week=random.uniform(2.0, 3.4),
-            days=WEEKDAYS,
+            visits_per_week=rate,
+            days=_spread(round(rate), WEEKDAYS, random),
             hour=random.choice(MORNING_HOURS),
             fade_from=None,
             final_share=1.0,
@@ -159,8 +176,12 @@ def _attendance(as_of: date, random: Random) -> Attendance:
     if habit is Habit.OCCASIONAL:
         return Attendance(
             habit=habit,
-            visits_per_week=random.uniform(0.3, 1.1),
-            days=ALL_DAYS,
+            visits_per_week=random.uniform(0.25, 1.0),
+            # One or two days they favour rather than any day of the week. A
+            # fortnightly attender goes on alternate Saturdays; they do not roll a
+            # die every morning. Spread across all seven days their visits arrive in
+            # bursts, and a median gap taken over two or three of them says nothing.
+            days=_spread(random.randint(1, 2), ALL_DAYS, random),
             hour=random.choice(MORNING_HOURS + EVENING_HOURS),
             fade_from=None,
             final_share=1.0,
@@ -168,20 +189,24 @@ def _attendance(as_of: date, random: Random) -> Attendance:
         )
 
     if habit is Habit.FADING:
+        rate = random.uniform(2.2, 4.4)
         return Attendance(
             habit=habit,
-            visits_per_week=random.uniform(2.2, 4.4),
-            days=ALL_DAYS,
+            visits_per_week=rate,
+            days=_spread(round(rate), ALL_DAYS, random),
             hour=random.choice(MORNING_HOURS + EVENING_HOURS),
             fade_from=as_of - timedelta(weeks=random.uniform(6, 14)),
-            final_share=random.uniform(0.05, 0.4),
+            # How far the fade goes decides the band, so the range spans all three
+            # rather than bunching every fading member into High.
+            final_share=random.uniform(0.15, 0.6),
             stopped_on=None,
         )
 
+    rate = random.uniform(1.6, 4.2)
     return Attendance(
         habit=habit,
-        visits_per_week=random.uniform(1.6, 4.2),
-        days=ALL_DAYS,
+        visits_per_week=rate,
+        days=_spread(round(rate), ALL_DAYS, random),
         hour=random.choice(MORNING_HOURS + EVENING_HOURS),
         fade_from=None,
         final_share=1.0,

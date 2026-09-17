@@ -6,7 +6,6 @@ A slice is written out in full shortly before it is built. Detailing all of them
 
 | | Slice | Written | Produces |
 |---|---|---|---|
-| 006 | Score the estate | yes | `risk_scores` at twelve weekly dates, around twenty in the High band |
 | 007 | Build the application shell and the visual design | yes | The chrome, the design language and the states every screen inherits |
 | 008 | Build the estate screen | | Six sites ranked by at-risk rate, with the trend |
 | 009 | Build the at-risk queue | | Every banded member, High first, with reasons |
@@ -18,11 +17,11 @@ A slice is written out in full shortly before it is built. Detailing all of them
 | 015 | Rewrite the README and write the running instructions | | A front door, and a way for someone else to run it |
 | 016 | Compare the drafting model | | A measured choice between the three candidates, recorded as an ADR |
 
-001 to 005 are done and sit in `completed/`. Between them they settled the Python version the Vercel runtime offers, found that Vercel builds this repository as a Python project unless `vercel.json` says otherwise, and put the seven tables, the estate and the equipment in Neon.
+001 to 006 are done and sit in `completed/`. The data and the arithmetic are finished: seven tables, the estate, the equipment and twelve weeks of scores are in Neon, with nineteen members in the High band at the most recent date. 004 was reopened by 006 as expected, and its file carries the amendment.
 
 ## Where the order comes from
 
-006 first of what remains, and it is the last of the data work. It is where the generator's spread gets tuned against the scoring thresholds, so 004 will be reopened alongside it if the bands come out lopsided.
+007 first of what remains, and the first slice with no data work in it.
 
 007 sits between the data and the screens deliberately. Built after it, 008 and 009 are layout against decisions already made. Built without it, each screen invents its own look and the result reads as three different tools.
 
