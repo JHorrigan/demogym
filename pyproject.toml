@@ -1,0 +1,28 @@
+[project]
+name = "demogym"
+version = "0.1.0"
+description = "Member-retention tooling for a fictional gym operator, built on synthetic data"
+requires-python = ">=3.13"
+dependencies = []
+
+[build-system]
+requires = ["uv_build>=0.11.16,<0.12"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 100
+# Ruff formats Python inside Markdown code blocks. The documentation here is prose,
+# not code under test, so it stays outside the gate.
+extend-exclude = ["*.md"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.16.8",
+]

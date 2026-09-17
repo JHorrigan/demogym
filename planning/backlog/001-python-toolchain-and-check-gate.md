@@ -1,7 +1,7 @@
 ---
 slice: 001
 title: Set up the Python toolchain and the check gate
-status: backlog
+status: in progress
 depends_on: []
 decisions: [0001, 0005]
 ---
@@ -43,5 +43,53 @@ It also settles an open question that blocks the schema and the endpoint: which 
 - `standards/python.md` and `pyproject.toml` name the same Python version, and that version is one Vercel offers.
 
 ## Evidence
+
+**Vercel Python version.** Vercel's Python runtime defaults to 3.12 and supports 3.12, 3.13 and 3.14,
+set through `.python-version`, `pyproject.toml` or `Pipfile.lock`
+(`vercel.com/docs/functions/runtimes/python`, read through context7 on 2026-09-17).
+3.13 is offered, so `standards/python.md` needed no correction. `.python-version` holds `3.13` and
+`pyproject.toml` sets `requires-python = ">=3.13"`.
+
+**`uv sync` on a clean clone.** The tracked and untracked files were copied to an empty directory with
+no `.venv`, and `uv sync --locked` resolved and installed from the lock file with no other setup.
+`make check` then passed in that copy.
+
+**`make check` order and exit code.** Output is `ruff format --check`, then `ruff check`, then `pytest`.
+Exit code 0.
+
+```
+uv run ruff format --check .
+2 files already formatted
+uv run ruff check .
+All checks passed!
+uv run pytest
+...
+tests/test_package.py .                                                  [100%]
+============================== 1 passed in 0.00s ===============================
+EXIT=0
+```
+
+**A deliberate lint error fails the gate and names the file.** Adding an unused `import os` to
+`src/demogym/__init__.py`:
+
+```
+uv run ruff check .
+F401 `os` imported but unused
+ --> src/demogym/__init__.py:3:8
+Found 1 error.
+make: *** [Makefile:7: lint] Error 1
+EXIT=2
+```
+
+pytest did not run, so the gate stops at the first failure. Removing the import returned it to exit 0.
+
+**Ruff 0.16 reaches Markdown.** `ruff format --check .` reported 27 files against 2 Python files in the
+repository. Reproduced on a scratch `t.md`: ruff 0.16 formats Python code blocks inside Markdown by
+default, and the 27 was 25 Markdown files plus the 2 Python ones. The planning documents are prose and
+not code under test, so `extend-exclude = ["*.md"]` keeps the formatter off them. Recorded because it
+changes what the gate covers.
+
+**CI.** Not yet verified. `.github/workflows/check.yml` runs `uv sync --locked` then `make check` on
+push, with no secrets. The condition stays open until a run on a pushed commit is green.
 
 ## Outcome
