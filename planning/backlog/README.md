@@ -6,7 +6,6 @@ A slice is written out in full shortly before it is built. Detailing all of them
 
 | | Slice | Written | Produces |
 |---|---|---|---|
-| 001 | Set up the Python toolchain and the check gate | yes | `make check` passes on a clean clone and runs in CI |
 | 002 | Deploy the application behind a link token | yes | A protected URL that deploys on push, and `standards/nextjs.md` |
 | 003 | Create the schema and the migration runner | yes | Seven tables in Neon |
 | 004 | Generate and seed the estate | yes | Sites, members and six months of entries |
@@ -23,11 +22,11 @@ A slice is written out in full shortly before it is built. Detailing all of them
 | 015 | Rewrite the README and write the running instructions | | A front door, and a way for someone else to run it |
 | 016 | Compare the drafting model | | A measured choice between the three candidates, recorded as an ADR |
 
+001 is done and sits in `completed/`. It settled the Python version the Vercel runtime offers, which `standards/python.md` had assumed.
+
 ## Where the order comes from
 
-001 first because 0001 and 0005 both commit to `make check` being the gate, and nothing after it can claim to be done until it exists. It also settles which Python version the Vercel runtime offers, which `standards/python.md` currently assumes.
-
-002 second because deployment is the thing most likely to go wrong late, and discovering that with three screens built is worse than discovering it with none.
+002 first of what remains because deployment is the thing most likely to go wrong late, and discovering that with three screens built is worse than discovering it with none.
 
 003 to 006 build the data and the arithmetic, in the only order they can go in. 006 is where the generator's spread gets tuned against the scoring thresholds, so 004 and 006 will be revisited together.
 
