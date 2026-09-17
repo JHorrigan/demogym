@@ -46,6 +46,8 @@ briefings    -- site_id, generated_on, body, model, input_tokens, output_tokens,
 | Drafts | up to 40 | written on demand, empty until someone asks |
 | Briefings | 6 | written on demand, one per site |
 
+An eighth table, `model_calls`, holds a day and a count. It is bookkeeping rather than data: it is the counter behind the daily cap, and it exists because the cap counts requests the endpoint accepted rather than rows that were written. A call that fails writes no draft and still has to count, or a model that refused everything would be an unlimited one.
+
 `entries` records arrival only. There is no exit time and therefore no session and no dwell time, because most turnstiles do not scan on the way out.
 
 `equipment` is one table rather than a catalogue and a unit register, because the capex feature that needed the split is not built. Fault history is reduced to a current `status` and `down_since`, which is what the briefing needs.

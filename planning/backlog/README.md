@@ -6,7 +6,7 @@ A slice is written out in full shortly before it is built. Detailing all of them
 
 | | Slice | Written | Produces |
 |---|---|---|---|
-| 010 | Build the drafting endpoint | | A deployed Python endpoint that drafts one member |
+| 010 | Build the drafting endpoint | 2026-09-17 | A deployed Python endpoint that drafts one member |
 | 011 | Draft from the queue | | Tone, length and offer controls, Draft all, redraft, the four row states |
 | 012 | Record decisions on a draft | | Approve, Edit and Reject, the edit diff, "Approved, not sent" |
 | 013 | Build the site briefing | | A briefing per site, generated on request |

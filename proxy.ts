@@ -21,6 +21,11 @@ export function proxy(request: NextRequest) {
   return NextResponse.rewrite(new URL("/refused", request.url), { status: 401 });
 }
 
+/**
+ * `api` is excluded because the Python endpoints under it check the token themselves.
+ * Two gates in front of one door means neither is tested: if this one passed the
+ * request through, nobody would notice the other had stopped checking.
+ */
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|robots.txt).*)"],
+  matcher: ["/((?!api/|_next/static|_next/image|favicon.ico|robots.txt).*)"],
 };
