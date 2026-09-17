@@ -78,7 +78,7 @@ For each member active on the scoring date, meaning joined and not left, two rea
 
 **Recent rate**, visits per week over the trailing 3 weeks. Three weeks gives even a fortnightly attender an expected 1.5 visits, so the comparison means something.
 
-**Typical gap**, the median days between consecutive visits over the baseline window.
+**Typical gap**, the median days between consecutive visits over everything the system has seen of them, which is the trailing 12 weeks or since they joined if that is more recent. For a member with a full history that is the baseline window. For a joiner it is wider, because a gap measured over their first four weeks alone throws away every visit they have made since.
 
 From those, `decay` is the recent rate divided by the baseline, and `gap_multiple` is days since the last visit divided by the typical gap.
 
@@ -96,7 +96,7 @@ Anything above those is not flagged.
 
 **The minimum-baseline guard.** The decay ratio governs only members with a baseline of at least one visit per week. Below that, the gap reading governs alone, because a ratio built on one or two visits is noise. This is what keeps the twice-a-month member off the queue while the four-times-a-week member reaches High at about day seven.
 
-**No visits in the baseline window** bands High without further calculation.
+**No visits at all** bands High without further calculation. At all means in the trailing 12 weeks, or since they joined if that is more recent, and not in the baseline window. A member between four and twelve weeks has their own first four weeks as that window, and an empty one says nothing about whether they are still coming: somebody who joined, did nothing for a month and has attended twice a week since has not stopped.
 
 Members are banded rather than ranked on a raw score, because an operations team works a queue and not a leaderboard. Within a band the queue orders by monthly price.
 
@@ -218,6 +218,4 @@ And of the system itself: no contact suppression or frequency cap behind the app
 
 - Whether a cheaper or larger model holds the briefing constraint better, settled by the comparison slice rather than in advance.
 - Whether a briefing is invalidated when decisions are recorded against its site, or simply overwritten the next time someone asks for one.
-- **Whether the no-visits rule should apply to a joiner's four-week window.** "No visits in the baseline window bands High without further calculation" was written for a twelve-week window, where it plainly means somebody has stopped coming. A member between four and twelve weeks has their own first four weeks as that window, so somebody who joined, did nothing for a month, and has been attending since is banded High while they are actively coming in. 011 found it by putting the reason and a drafted message side by side, and the reason now says when the member last came, so the row states the tension rather than hiding it. Whether the rule itself should change is not decided.
-
 - **Whether the gap reading needs a minimum-data guard of its own.** The minimum-baseline guard protects the decay ratio from thin history and nothing protects the typical gap. A member with two visits in the window, a day apart, has a median gap of one day, so a month of silence reads as thirty times their usual gap. 006 found this by running the rule rather than reading it, and settled it in the generator: members attend on a small set of spaced days rather than by an independent draw each morning, which is a better model of how people train and leaves almost nothing resting on two or three gaps. That removes the symptom from this dataset. On real data the case would recur, and the options are a minimum number of gaps before the reading governs, or a floor under the typical gap. Neither is decided, and the thresholds in the band table were left where they are.

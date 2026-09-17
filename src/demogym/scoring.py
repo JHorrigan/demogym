@@ -44,6 +44,23 @@ class Window:
 
 
 @dataclass(frozen=True)
+class Observed:
+    """Everything the system has been able to see of one member, half open.
+
+    Never the whole baseline window: a member who joined nine weeks ago has a baseline
+    window that sits entirely in the past, and an empty one says nothing about whether
+    they are still coming. This period always runs up to the scoring date, so "no
+    visits at all" means what it says.
+    """
+
+    start: date
+    end: date
+    # The phrase a reason slots into a sentence, so "since they joined" and "in the
+    # last 12 weeks" can both follow "No visits at all".
+    label: str
+
+
+@dataclass(frozen=True)
 class Score:
     """One member's band at one date, with the readings behind it."""
 
@@ -77,6 +94,15 @@ def baseline_window(joined_on: date, scored_on: date) -> Window | None:
     return Window(end - timedelta(weeks=BASELINE_WEEKS), end, BASELINE_WEEKS, "the last 12 weeks")
 
 
+def observed_period(joined_on: date, scored_on: date) -> Observed:
+    """The trailing twelve weeks, or since they joined if that is shorter."""
+    end = scored_on + timedelta(days=1)
+    start = end - timedelta(weeks=BASELINE_WEEKS)
+    if joined_on > start:
+        return Observed(joined_on, end, "since they joined")
+    return Observed(start, end, "in the last 12 weeks")
+
+
 def score(visits: list[date], joined_on: date, scored_on: date) -> Score | None:
     """Bands one member at one date, or returns None if they are too new to score.
 
@@ -86,10 +112,15 @@ def score(visits: list[date], joined_on: date, scored_on: date) -> Score | None:
     if window is None:
         return None
 
+    observed = observed_period(joined_on, scored_on)
     in_window = [visit for visit in visits if window.start <= visit < window.end]
+    seen = [visit for visit in visits if observed.start <= visit < observed.end]
+
     baseline = _baseline(in_window, window)
     recent_rate = _recent_rate(visits, scored_on)
-    typical_gap = _typical_gap(in_window)
+    # Over everything seen rather than the baseline window, so a joiner whose first
+    # four weeks are empty still has a usual gap drawn from the visits they made.
+    typical_gap = _typical_gap(seen)
     days_since = _days_since_last_visit(visits, scored_on)
 
     decay = recent_rate / baseline if baseline > 0 else None
@@ -97,7 +128,7 @@ def score(visits: list[date], joined_on: date, scored_on: date) -> Score | None:
 
     decay_band = _decay_band(decay, baseline)
     gap_band = _gap_band(gap_multiple)
-    banded = "high" if not in_window else band(decay, gap_multiple, baseline)
+    banded = "high" if not seen else band(decay, gap_multiple, baseline)
 
     return Score(
         band=banded,
@@ -106,7 +137,8 @@ def score(visits: list[date], joined_on: date, scored_on: date) -> Score | None:
             decay_band,
             gap_band,
             window,
-            in_window,
+            observed,
+            seen,
             baseline,
             recent_rate,
             decay,
@@ -236,7 +268,8 @@ def _reason(
     decay_band: str,
     gap_band: str,
     window: Window,
-    in_window: list[date],
+    observed: Observed,
+    seen: list[date],
     baseline: float,
     recent_rate: float,
     decay: float | None,
@@ -244,11 +277,11 @@ def _reason(
     days_since: int | None,
 ) -> str:
     """Names the reading that drove the band, with the numbers behind it."""
-    if not in_window:
-        # A joiner can have nothing in their first four weeks and have come since.
-        # The window sentence on its own reads as never, which is a different claim.
+    if not seen:
+        # A settled member can have last come before the window opened. The sentence
+        # on its own reads as never, which is a different claim.
         since = f" Last came {_last_came(days_since)}." if days_since is not None else ""
-        return f"No visits at all in {window.label}.{since}"
+        return f"No visits at all {observed.label}.{since}"
 
     if banded == UNFLAGGED:
         return _steady_reason(baseline, recent_rate, decay, days_since, window)

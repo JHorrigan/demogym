@@ -216,16 +216,56 @@ def test_no_visits_in_the_window_says_so_without_quoting_a_ratio() -> None:
     assert scored.gap_multiple is None
 
 
-def test_no_visits_in_the_window_still_says_when_they_last_came() -> None:
-    """A joiner can have nothing in their first four weeks and have come since.
+def test_nothing_in_twelve_weeks_still_says_when_they_last_came() -> None:
+    """The sentence on its own reads as never, which is a different claim."""
+    scored = score([SCORED_ON - timedelta(weeks=20)], SETTLED, SCORED_ON)
 
-    The window sentence alone reads as never, and a message drafted from it sits
-    beside a last visit the member certainly made.
+    assert scored.reason == "No visits at all in the last 12 weeks. Last came 140 days ago."
+
+
+# A joiner whose first four weeks are empty.
+
+
+def test_a_joiner_who_has_attended_since_their_empty_window_is_not_banded_high_for_it() -> None:
+    """The no-visits rule means nobody has seen them, not that one window is empty.
+
+    A member between four and twelve weeks has their own first four weeks as the
+    baseline window, and that window is in the past. Somebody who joined, did nothing
+    for a month, and has been attending twice a week since is not a member who has
+    stopped coming.
     """
     joined = SCORED_ON - timedelta(weeks=9)
-    scored = score([SCORED_ON - timedelta(days=19)], joined, SCORED_ON)
+    attending = [joined + timedelta(days=day) for day in range(28, 63, 3)]
 
-    assert scored.reason == "No visits at all in their first four weeks. Last came 19 days ago."
+    scored = score(attending, joined, SCORED_ON)
+
+    assert scored.band == UNFLAGGED
+
+
+def test_a_joiner_who_has_never_attended_still_bands_high() -> None:
+    joined = SCORED_ON - timedelta(weeks=9)
+
+    scored = score([], joined, SCORED_ON)
+
+    assert scored.band == "high"
+    assert scored.reason == "No visits at all since they joined."
+
+
+def test_a_joiners_usual_gap_counts_the_visits_they_have_actually_made() -> None:
+    """Their gap comes from what the system has seen, not from an empty window.
+
+    With the gap measured over the baseline window alone, a joiner with nothing in
+    their first four weeks has no gap at all, so a month of silence after a run of
+    visits reads as nothing.
+    """
+    joined = SCORED_ON - timedelta(weeks=9)
+    weekly = [joined + timedelta(days=day) for day in (28, 35, 42, 49)]
+
+    scored = score(weekly, joined, SCORED_ON)
+
+    assert scored.typical_gap == 7.0
+    assert scored.gap_multiple == 2.0
+    assert scored.band == "low"
 
 
 def test_a_member_whose_visits_all_predate_the_window_bands_high() -> None:

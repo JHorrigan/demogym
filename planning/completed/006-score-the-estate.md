@@ -223,3 +223,80 @@ One thing this slice does not establish. The tests assert the rules hold and the
 entries. They say nothing about whether the rule finds members a real gym would want called, and they
 cannot, because the data was made by the same project. 0005 records that, and the accuracy figure this
 project deliberately does not produce is the same point.
+
+## Amended after 011
+
+011 put a reason string next to a message drafted from it, and the pair read as a contradiction: M00141
+at Riverside said "No visits at all in their first four weeks" while the draft named a visit on 29
+August the member had certainly made. Both were true. The rule behind them was not.
+
+**What was wrong.** The specification said no visits in the baseline window bands High without further
+calculation. For a member with a full history that window is the trailing twelve weeks, so an empty one
+means they have stopped coming. For a member between four and twelve weeks the window is their own first
+four weeks, which is a stretch of the past: emptying it says nothing about whether they are still coming.
+Sixteen rows across the twelve scoring dates were banded High on an empty joiner window while the member
+had attended since, two of them at the most recent date. M00106 was High for an empty first four weeks
+and had last come four days earlier.
+
+**What changed.** Two things, and the second is what makes the first work.
+
+The no-visits rule now fires on an observed period rather than the baseline window: the trailing twelve
+weeks, or since they joined if that is more recent. It always runs up to the scoring date, so "no visits
+at all" means what it says. `Observed` in `scoring.py` carries it, with the phrase a reason uses for it,
+so a member who has never come reads "No visits at all since they joined" and a member who stopped
+twelve weeks ago still reads "in the last 12 weeks".
+
+The typical gap is now measured over that same observed period rather than over the baseline window.
+Without this the fix has a hole: a joiner with an empty first four weeks has no gap at all, so a month of
+silence after a run of visits would band unflagged, which is the opposite mistake. For a member with a
+full history the two periods are identical, so nothing about a settled member moved.
+
+**What it moved.** Rescoring changed 29 rows out of 3,010, of which 24 changed band.
+
+```
+bands at the most recent date
+  high         19 ->   18
+  medium       15 ->   16
+  low          12 ->   11
+  unflagged   217 ->  218
+```
+
+Ten of the band moves are the misfire going away. The rest are joiners whose gap reading now counts the
+visits they have made rather than only the ones inside their first four weeks. Three checked by hand
+against the entries:
+
+```
+M00266  joined 2026-08-08, 5 weeks
+  visits 13 Aug, 1 Sep, 2 Sep, 5 Sep    gaps 19, 1, 3    median 3    last came 12 days ago
+  12 / 3 = 4.00                         stored gap 3.00, multiple 4.00    unflagged -> high
+  The 5 September visit sat outside their first four weeks, so the old gap was 10 days and a
+  twelve-day silence read as ordinary.
+
+M00141  joined 2026-07-13, 9 weeks
+  visits 15, 22, 28, 29 Aug             gaps 7, 6, 1     median 6    last came 19 days ago
+  19 / 6 = 3.17                         stored gap 6.00, multiple 3.17    high -> medium
+
+M00106  joined 2026-07-15, 9 weeks
+  visits 13, 23, 26 Aug, 13 Sep         gaps 10, 3, 18   median 10   last came 4 days ago
+  4 / 10 = 0.40                         stored gap 10.00, multiple 0.40   high -> unflagged
+```
+
+Neither of the last two claims a usual weekly rate any more, because their baseline is zero and saying
+"usually attends 0 times a week" would be a number pretending to be a reading.
+
+Three tests landed with it, written before the change and watched to fail against the old rule:
+
+```
+test_a_joiner_who_has_attended_since_their_empty_window_is_not_banded_high_for_it   FAIL
+test_a_joiner_who_has_never_attended_still_bands_high                               FAIL
+test_a_joiners_usual_gap_counts_the_visits_they_have_actually_made                  FAIL
+```
+
+The test 011 added for the last-visit clause moved to a member whose visits all predate the twelve-week
+window, which is the case that still reaches that sentence.
+
+This slice's own conditions still hold: the most recent date holds eighteen High-band members, inside the
+fifteen to twenty-five the slice asked for, and every cut point in the band table is still tested.
+
+The open question this raised in the specification is now closed, and the rule text and the typical-gap
+definition were both rewritten to match.
