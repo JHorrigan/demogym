@@ -1,16 +1,80 @@
 @import "tailwindcss";
 
-/* Minimal tokens so the placeholder is not unstyled. 007 settles the design language. */
+/*
+ * The design language every screen inherits. An internal operations tool, so the
+ * reference is instrumentation rather than a marketing page: a warm paper ground,
+ * hairline rules, wide-tracked labels, and every number set in a monospace with
+ * tabular figures so columns line up and a reader can compare them down the page.
+ *
+ * Every colour below was measured against both grounds it sits on. Ratios are in
+ * the slice evidence.
+ */
 @theme {
-  --color-surface: #0f1115;
-  --color-raised: #161a21;
-  --color-ink: #e7e9ee;
-  --color-ink-dim: #8b929f;
-  --color-rule: #262b34;
-  --color-notice: #d8a657;
+  --color-paper: #f7f5f0;
+  --color-raised: #ffffff;
+
+  --color-ink: #1a1814;
+  --color-ink-dim: #63604f;
+  /* Large text and non-essential marks only, at 3.36:1. */
+  --color-ink-faint: #8a8674;
+
+  /* Table hairlines, which are structure rather than a control. */
+  --color-rule: #c2bba8;
+  /* The edge of anything you can click, at 3.96:1 so the control is identifiable. */
+  --color-edge: #7e7a68;
+
+  /* The synthetic-data strip. Solid and dark, because a pale tint against this
+   * paper measured 1.03:1 and read as nothing at all. */
+  --color-strip: #2b2822;
+  --color-strip-ink: #c9c3b4;
+  --color-marker: #e0a73c;
+
+  --color-high: #a62b16;
+  --color-medium: #7a5200;
+  --color-low: #2f5a72;
+
+  --color-accent: #1f4d3f;
+
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-azeret), ui-monospace, monospace;
 }
 
-body {
-  background-color: var(--color-surface);
-  color: var(--color-ink);
+@layer base {
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+  }
+
+  /* One ring, on every interactive element, without each one remembering. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* Figures are for comparing, so they never shift width between values. */
+  .figure {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* The label above a reading, as an instrument would letter it. */
+  .label {
+    font-size: 0.6875rem;
+    line-height: 1;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-ink-dim);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -6,7 +6,6 @@ A slice is written out in full shortly before it is built. Detailing all of them
 
 | | Slice | Written | Produces |
 |---|---|---|---|
-| 007 | Build the application shell and the visual design | yes | The chrome, the design language and the states every screen inherits |
 | 008 | Build the estate screen | | Six sites ranked by at-risk rate, with the trend |
 | 009 | Build the at-risk queue | | Every banded member, High first, with reasons |
 | 010 | Build the drafting endpoint | | A deployed Python endpoint that drafts one member |
@@ -17,13 +16,11 @@ A slice is written out in full shortly before it is built. Detailing all of them
 | 015 | Rewrite the README and write the running instructions | | A front door, and a way for someone else to run it |
 | 016 | Compare the drafting model | | A measured choice between the three candidates, recorded as an ADR |
 
-001 to 006 are done and sit in `completed/`. The data and the arithmetic are finished: seven tables, the estate, the equipment and twelve weeks of scores are in Neon, with nineteen members in the High band at the most recent date. 004 was reopened by 006 as expected, and its file carries the amendment.
+001 to 007 are done and sit in `completed/`. The data and the arithmetic are finished: seven tables, the estate, the equipment and twelve weeks of scores are in Neon, with nineteen members in the High band at the most recent date. 004 was reopened by 006 as expected, and its file carries the amendment. The shell and the design language are in place, so the screens are layout rather than design.
 
 ## Where the order comes from
 
-007 first of what remains, and the first slice with no data work in it.
-
-007 sits between the data and the screens deliberately. Built after it, 008 and 009 are layout against decisions already made. Built without it, each screen invents its own look and the result reads as three different tools.
+008 first of what remains.
 
 008 and 009 put computed data on a screen before any model is involved, so that when 010 lands the only new thing is the model.
 
