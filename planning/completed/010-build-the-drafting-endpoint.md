@@ -1,7 +1,7 @@
 ---
 slice: 010
 title: Build the drafting endpoint
-status: backlog
+status: complete
 depends_on: [002, 003, 006]
 decisions: [0003, 0004, 0005, 0006, 0007, 0008]
 ---
@@ -295,6 +295,111 @@ npx eslint
 EXIT=0
 ```
 
+**The deployed endpoint.** Commit `88777c1`, against `https://demogym-ten.vercel.app/api/draft`:
+
+```
+no token           [401] json  forbidden      | This endpoint is reached with the link token.   (0.4s)
+bad tone           [400] json  bad request    | tone must be one of: warm, direct, encouraging  (0.4s)
+unknown member     [404] json  unknown member | No member 999999 was scored at the most...      (0.5s)
+a real draft       [200] json  drafted        | A quick note from Northgate                     (7.7s)
+```
+
+The first line is the condition this slice cared about. Without the token the response is the endpoint's
+own JSON, not the application's refusal page, so `/api` is outside the proxy's matcher and the gate that
+refused the call is the one in the Python. The site root still answers 401 from the proxy, so the page
+gate is untouched.
+
+The row the deployed function wrote, read back out of Neon:
+
+```
+member 1853  2026-09-17  attempt 1  encouraging/standard/guest pass
+  subject: A quick note from Northgate
+  gpt-5.6-luna  in 537  out 648
+  stored 0.0885 cents, by hand 0.0885 cents, match True
+  decision None, edited_body None, decided_at None
+calls counted today: 2 -> 3
+```
+
+The draft claimed three things about the member. All three check out against the entries:
+
+```
+draft:  "about twice a week"          stored baseline 2.00
+draft:  "often on Monday mornings"    Monday 8 of 25 visits in the window, all 25 in the morning
+draft:  "your last visit was 10 days ago"   last entry 2026-09-07, ten days before the scoring date
+```
+
+Both evidence drafts were deleted afterwards, so `drafts` is empty and the queue opens with nothing in it,
+as 0008 requires. `model_calls` keeps today at three, which is the true count of calls the endpoint
+accepted today and is what the cap is for.
+
 ## Outcome
 
-Filled in when the slice moves to `completed/`.
+A deployed Python function that drafts one member at risk, reachable at `/api/draft`, taking a member and
+three dropdown settings and returning a subject, a body, a rationale, the pinned model ID, both token
+counts and a measured cost. It is the first thing in this deployment that is not a page, and the first
+call to a model in the project.
+
+`facts.py` derives what the prompt may see, `prompt.py` assembles it, `drafting.py` validates the request,
+`model.py` makes the one call and prices it, `drafts.py` reads and writes the rows, `cap.py` holds the
+daily cap, and `draft_endpoint.py` decides what comes back. `api/draft.py` is twenty lines of HTTP over the
+top. Migration 009 adds `model_calls`, the cap's counter, which 0002 had already anticipated as the one
+piece of state read and written inside a request.
+
+Six decisions the slice left open, settled here.
+
+**The token travels in a header, not the path.** The pages carry the token as their first path segment;
+the endpoint is one fixed path, so it reads `x-demogym-token`. `/api` came out of the proxy's matcher at
+the same time. Two gates in front of one door means neither is tested, and 0006 asks for the endpoint's
+own check rather than an inherited one.
+
+**The scoring date is taken from the database, never from the request.** A caller names a member and
+nothing else. There is no way to ask for a draft against a week that is no longer current.
+
+**The daily cap is one SQL statement.** An insert with an `on conflict do update ... where calls < limit`,
+so two requests arriving together cannot both read the count below the cap and both spend it. It counts
+requests the endpoint accepted rather than rows written, which is why a failed call moved the counter and
+left the member's attempt count alone.
+
+**The provider's error body does not reach the reader.** The first version returned the raw upstream
+message, which put a masked key fragment and an OpenAI help URL into a public response. The error now goes
+to the log and the response carries one plain sentence for the state. A reviewer can act on none of the
+provider's detail, and whoever ran the call can read all of it.
+
+**A truncated message reads as unreachable.** The specification gives the interface three failure states
+and a separate rule that a half-written message is discarded. Rather than add a fourth state, truncation
+returns `unreachable` with its own sentence in the message field. The heading a reviewer sees will say the
+model could not be reached, when what happened is that the message came back unfinished. That seam is
+011's to look at when it renders the states.
+
+**400, 401 and 403 also read as unreachable.** The specification's failure table is about what to retry,
+not about what a row says, and the client already refuses to retry all three. A bad key is a deployment
+fault a reviewer cannot act on, so it lands in the same state as a dropped connection, with the real cause
+in the log.
+
+Three things came out different from what was written down.
+
+**A call takes about seven seconds, not the couple of seconds 0008 estimates.** Two thirds of the output
+tokens are reasoning rather than message. At low reasoning effort the same prompt runs in three and a half
+to four seconds for roughly half the tokens, and the drafts read no worse. That is recorded as a
+measurement rather than acted on: three messages read by one person is not the edit-rate measure this
+project says it trusts, and 016 is where a model parameter gets chosen on evidence. Vercel's default
+function duration is 300 seconds, so seven seconds needs no configuration and none was added.
+
+**The habits are hedged in the prompt, because the counts are thinner than they look.** M00020's modal day
+is twelve visits out of fifty-two, which is a preference rather than a habit. The prompt says "came most
+often on a Friday" and never "usually", and the tie between Friday and Saturday is broken by taking the
+earlier weekday so the fact is at least deterministic. A member who trains five days a week has no usual
+day, and a sentence claiming they do would be the model repeating our overstatement rather than inventing
+its own.
+
+**The specification gained an eighth table.** `model_calls` is bookkeeping rather than data, and the data
+section now says so and says why the cap cannot be counted from the rows that were written.
+
+Two things this slice does not do. Nothing tests the deployed function itself, per 0005: the tests cover
+the decisions underneath it, and the function was proved by calling it. And the cap's atomicity rests on
+one statement in Postgres, which no test in `make check` touches, because nothing in the gate has a
+database. It was proved by running it at a cap of three and watching the fourth call refuse.
+
+The thing worth keeping from this slice is how little the model was given. Eight facts, three list values,
+and no entry rows. Every sentence in a draft that sounds like the writer knows the member is a number this
+project computed, and all three claims in the deployed draft were checked back to the entries by hand.
