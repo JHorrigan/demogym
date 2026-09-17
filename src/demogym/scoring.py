@@ -205,6 +205,27 @@ def _plain(value: float) -> str:
     return f"{value:.0f}" if value == int(value) else f"{value:.1f}"
 
 
+def _days(value: float) -> str:
+    """A number of days, singular where it is one. These strings are read by people."""
+    return "1 day" if value == 1 else f"{_plain(value)} days"
+
+
+def _last_came(days: int) -> str:
+    """When they last came, as a person would say it.
+
+    Zero days is today. "Last came 0 days ago" is the kind of phrase that tells a
+    reader the sentence was assembled rather than written.
+    """
+    if days == 0:
+        return "today"
+    return "1 day ago" if days == 1 else f"{days} days ago"
+
+
+def _a_week(rate: float) -> str:
+    """A weekly rate as a person would say it."""
+    return "once a week" if rate == 1 else f"{_plain(rate)} times a week"
+
+
 def _worse(left: str, right: str) -> str:
     """A member takes the worse of the two readings."""
     return left if SEVERITY[left] >= SEVERITY[right] else right
@@ -238,7 +259,7 @@ def _reason(
 def _decay_reason(
     baseline: float, recent_rate: float, decay: float | None, window: Window, days_since: int | None
 ) -> str:
-    since = f" Last came {days_since} days ago." if days_since is not None else ""
+    since = f" Last came {_last_came(days_since)}." if days_since is not None else ""
     return (
         f"Visits down from {_plain(baseline)} to {_plain(recent_rate)} a week, "
         f"{decay:.0%} of their rate over {window.label}.{since}"
@@ -246,20 +267,19 @@ def _decay_reason(
 
 
 def _gap_reason(days_since: int | None, typical_gap: float | None, baseline: float) -> str:
-    rate = f" Usually attends {_plain(baseline)} times a week." if baseline > 0 else ""
+    rate = f" Usually attends {_a_week(baseline)}." if baseline > 0 else ""
     return (
-        f"Last came {days_since} days ago, {days_since / typical_gap:.1f} times "
-        f"their usual gap of {_plain(typical_gap)} days.{rate}"
+        f"Last came {_days(days_since)} ago, {days_since / typical_gap:.1f} times "
+        f"their usual gap of {_days(typical_gap)}.{rate}"
     )
 
 
 def _steady_reason(
     baseline: float, recent_rate: float, decay: float | None, days_since: int | None, window: Window
 ) -> str:
-    since = f", last came {days_since} days ago" if days_since is not None else ""
+    since = f", last came {_last_came(days_since)}" if days_since is not None else ""
     if decay is None:
         return (
-            f"Attends {_plain(recent_rate)} times a week{since}. "
-            f"Too few visits in {window.label} to compare."
+            f"Attends {_a_week(recent_rate)}{since}. Too few visits in {window.label} to compare."
         )
     return f"Attending at {decay:.0%} of their usual {_plain(baseline)} a week{since}."

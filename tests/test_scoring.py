@@ -347,3 +347,42 @@ def test_a_member_who_leaves_after_the_scoring_date_is_still_active_on_it() -> N
 
 def test_a_member_who_left_on_the_scoring_date_is_no_longer_active() -> None:
     assert not is_active(SETTLED, SCORED_ON, SCORED_ON)
+
+
+# Reason strings are read by people, so they have to read like English.
+
+
+def test_a_gap_of_one_day_reads_as_one_day() -> None:
+    """A row saying "their usual gap of 1 days" undermines the string's whole job."""
+    scored = score(every(1, 40, SCORED_ON - timedelta(days=5)), SETTLED, SCORED_ON)
+
+    assert scored.typical_gap == 1.0
+    assert "gap of 1 day." in scored.reason
+    assert "1 days" not in scored.reason
+
+
+def test_a_weekly_rate_of_one_reads_as_once_a_week() -> None:
+    """The offsets are taken from a real row that read "Attends 1 times a week"."""
+    visits = [SCORED_ON - timedelta(days=offset) for offset in (90, 89, 76, 13, 9, 2)]
+    scored = score(visits, SETTLED, SCORED_ON)
+
+    assert scored.recent_rate == 1.0
+    assert "once a week" in scored.reason
+    assert "1 times a week" not in scored.reason
+
+
+def test_a_visit_yesterday_reads_as_one_day_ago() -> None:
+    visits = [*visits_in_weeks([5] * 11 + [0]), SCORED_ON - timedelta(days=1)]
+    scored = score(visits, SETTLED, SCORED_ON)
+
+    assert "last came 1 day ago" in scored.reason
+    assert "1 days ago" not in scored.reason
+
+
+def test_a_visit_today_reads_as_today() -> None:
+    """ "Last came 0 days ago" reads as an assembled sentence rather than a written one."""
+    visits = [*visits_in_weeks([5] * 11 + [0]), SCORED_ON]
+    scored = score(visits, SETTLED, SCORED_ON)
+
+    assert "last came today" in scored.reason
+    assert "0 days ago" not in scored.reason
