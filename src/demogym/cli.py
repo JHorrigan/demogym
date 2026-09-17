@@ -1,10 +1,12 @@
 """The command-line entry point for the local tooling."""
 
 import argparse
+from datetime import date
 from pathlib import Path
 
 from demogym.database import connect
 from demogym.migrate import run
+from demogym.seed import SEED, existing_counts, replace
 
 MIGRATIONS = Path(__file__).resolve().parents[2] / "migrations"
 
@@ -12,9 +14,18 @@ MIGRATIONS = Path(__file__).resolve().parents[2] / "migrations"
 def main() -> None:
     """Parses the command and runs it."""
     parser = argparse.ArgumentParser(prog="demogym", description=__doc__)
-    parser.add_argument("command", choices=["migrate"])
-    parser.parse_args()
-    migrate()
+    commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("migrate", help="apply pending migrations")
+
+    seed = commands.add_parser("seed", help="replace the estate with a generated one")
+    seed.add_argument("--as-of", type=date.fromisoformat, default=date.today())
+    seed.add_argument("--seed", type=int, default=SEED)
+
+    arguments = parser.parse_args()
+    if arguments.command == "migrate":
+        migrate()
+    else:
+        seed_estate(arguments.as_of, arguments.seed)
 
 
 def migrate() -> None:
@@ -28,3 +39,19 @@ def migrate() -> None:
 
     for migration in applied:
         print(f"Applied {migration.number:03d} {migration.name}")
+
+
+def seed_estate(as_of: date, seed: int) -> None:
+    """Replaces the estate and reports what it removed and what it wrote."""
+    with connect() as connection:
+        existing = existing_counts(connection)
+        if any(existing.values()):
+            print(
+                f"Replacing {existing['sites']} sites, {existing['members']} members "
+                f"and {existing['entries']} entries."
+            )
+        written = replace(connection, as_of, seed)
+
+    print(f"Wrote {written.sites} sites.")
+    print(f"Wrote {written.members} members.")
+    print(f"Wrote {written.entries} entries as of {as_of.isoformat()}, seed {seed}.")
