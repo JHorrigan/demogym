@@ -1,7 +1,7 @@
 ---
 slice: 011
 title: Draft from the queue
-status: backlog
+status: complete
 depends_on: [007, 009, 010]
 decisions: [0002, 0005, 0006, 0008]
 ---
@@ -242,6 +242,107 @@ npx eslint
 EXIT=0
 ```
 
+**The deployed screen.** Commit `bd7ba2b`, against `https://demogym-ten.vercel.app`, where there is no
+development rewrite and the browser is calling the deployed Python function:
+
+```
+panels: 19      buttons: Draft all 19 | Draft | Draft | Draft      cost: 0.00, 0 calls
+overflow at 320: page 305 vs viewport 320
+overflow at 390: page 375 vs viewport 390
+```
+
+Draft all over all nineteen:
+
+```
+highest in flight at any sample: 4
+
+messages on the page, as they arrived:
+  0.4s:0  8.1s:1  9.3s:2  11.3s:4  14.5s:5  16.1s:7  17.8s:8  21.8s:9  22.6s:10  23.4s:11
+  24.2s:12  27.8s:13  29.0s:14  29.4s:15  30.2s:16  36.3s:17  36.7s:19
+
+database:  19 rows, sum(cost_usd_cents) = 1.5965, model gpt-5.6-luna on every row
+header:    1.60 US cents, 19 calls
+```
+
+Thirty-seven seconds for nineteen deployed calls, four at a time, each message on the screen as it
+returned. The redraft on different terms, and the cap, both on the deployed function:
+
+```
+controls: direct / short / guest pass
+the redraft landed after about 7s
+stored: [(1, warm, standard, none), (2, direct, short, guest pass)]
+buttons on the panel afterwards: []
+
+with today's counter set to the cap:
+  Daily limit reached | The cap on model calls for today is spent. It resets tomorrow.   (1s, no model call)
+```
+
+Afterwards the twenty drafts and the day's counter were deleted, so the deployed queue opens with nothing
+in it, which is where 0008 says it starts.
+
 ## Outcome
 
-Filled in when the slice moves to `completed/`.
+The queue can be worked. A reviewer picks a tone, a length and an offer, presses Draft on one member or
+Draft all on the band, and watches messages arrive four at a time. Every row says which of the four
+states it is in, and the header's cost is the sum of what the API actually billed.
+
+`DraftQueue` is the only client component: it owns the row states, the sweep and the terms. `MemberPanel`
+and `DraftedMessage` render, `Select` is a new shared primitive, and `lib/drafts.ts` reads the stored rows
+on the server. The page stays a Server Component and hands the client formatted strings, so nothing in
+the browser reaches for the data layer.
+
+Six decisions the slice left open, settled here.
+
+**One set of controls, not one per row.** They are the terms of the next call, whether that call is one
+member or a sweep of nineteen, and the terms each message was written on are printed on the message. A
+set of dropdowns on every row would be nineteen copies of a control that is only ever used once at a
+time, and Draft all would have had no terms of its own.
+
+**The High band became panels.** A hundred and twenty words does not go in a table cell. 007 said the row
+was the thing to redesign if it stopped working, and a drafted message is the point at which it did.
+Medium and Low kept the table, because scanning is what they are for.
+
+**The calls in flight are on the screen.** 0008's four-at-a-time is the whole of this system's rate-limit
+strategy, and a constant in a file is a claim. A meter that reads "4 in flight / 13 to go" makes it
+something a reader can watch, and it is instrumentation rather than decoration, which is the language
+007 chose.
+
+**The cost is in US cents.** It is measured from the token counts the API returns, and pence would need an
+exchange rate this project has not measured. 007 built the readout in pence; converting the one number on
+the screen that is a measurement into an estimate would have been the wrong way round.
+
+**The readout refreshes after every call, and once more at the end.** It lives in the shell, so it only
+moves when the server components render again. Refreshing once at the end of a sweep left a running total
+that did not run. Refreshes made while calls are still out can coalesce, which leaves the header a call
+behind, so the sweep refreshes again when it finishes and the figure settles on the stored sum.
+
+**A call that does not answer with JSON reads as unreachable.** A dropped connection, or a platform error
+page where the endpoint's JSON should be, is the reviewer's "could not reach the model" and nothing more
+specific. Any refusal the endpoint returns that is not one of the three known states is a disagreement
+between the page and the database rather than something a reviewer can act on: the row reads as failed
+and what the endpoint said goes to the console.
+
+Three things came out different from what was planned.
+
+**The slice gained a development path it did not ask for.** `next dev` serves pages and nothing else, so
+without a proxy there is no way to run this screen locally at all. `scripts/serve_api.py` runs the same
+file Vercel runs, `next.config.ts` proxies `/api` to it in development only, and `make api` starts it. The
+server is threaded, because a single-threaded one serialises the four calls Draft all keeps in flight and
+makes a sweep look four times slower than it is. 015 documents it.
+
+**A defect in the scorer, and an open question behind it.** Putting a reason beside a drafted message
+showed that "No visits at all in their first four weeks" was silent about everything after those four
+weeks, while the message named a visit the member had certainly made. The reason now carries the last
+visit, with a test that fails without it, and the rescore moved no bands. That fix then exposed a member
+banded High for an empty first four weeks who attended four days ago, which is the no-visits rule written
+for a twelve-week window misfiring on a joiner's. The specification carries it as an open question rather
+than this slice changing a scoring rule.
+
+**The interface reference page became a client component.** A dropdown takes a change handler, which a
+Server Component cannot pass. The page renders fixtures and touches no data, so the cost is nothing, and
+the alternative was leaving a primitive out of the page that exists so the primitives can be looked at.
+
+Two things this slice does not do. Nothing tests any of it, per 0005: the measurements above were taken by
+hand and will not run again on the next change. And no row can be approved, edited or rejected yet, so
+every message on the screen says "Drafted, not sent" and the `decision` columns are still null. 012 is
+where a person decides.

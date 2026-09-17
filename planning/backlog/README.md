@@ -6,20 +6,19 @@ A slice is written out in full shortly before it is built. Detailing all of them
 
 | | Slice | Written | Produces |
 |---|---|---|---|
-| 011 | Draft from the queue | | Tone, length and offer controls, Draft all, redraft, the four row states |
 | 012 | Record decisions on a draft | | Approve, Edit and Reject, the edit diff, "Approved, not sent" |
 | 013 | Build the site briefing | | A briefing per site, generated on request |
 | 014 | Write the running-on-real-data page | | What this does not do, and the regulatory position |
 | 015 | Rewrite the README and write the running instructions | | A front door, and a way for someone else to run it |
 | 016 | Compare the drafting model | | A measured choice between the three candidates, recorded as an ADR |
 
-001 to 010 are done and sit in `completed/`. The data and the arithmetic are finished: the estate, the equipment and twelve weeks of scores are in Neon, with nineteen members in the High band at the most recent date. 004 was reopened by 006 as expected, and its file carries the amendment. The shell and the design language are in place, so the screens are layout rather than design. 010 put the model behind a deployed endpoint and proved it from a command, so the drafting rules, the limits and the failure states all exist before anything on a screen calls them.
+001 to 011 are done and sit in `completed/`. The data and the arithmetic are finished: the estate, the equipment and twelve weeks of scores are in Neon, with nineteen members in the High band at the most recent date. 004 was reopened by 006 as expected, and its file carries the amendment. The shell and the design language are in place, so the screens are layout rather than design. 010 put the model behind a deployed endpoint and 011 wired it to the queue, so the drafting feature is whole apart from the decision a person makes on what comes back.
 
 ## Where the order comes from
 
-011 first of what remains. It is a client for an endpoint that already works, so what it adds is the controls, the concurrency limit and the four row states, and nothing about drafting itself.
+012 first of what remains. It is the last part of the drafting feature and the one the whole human-in-the-loop argument rests on: a message exists on the screen and nothing has happened to it yet.
 
-011 to 013 are what is left of the two features. Drafting was split across three slices because the endpoint is provable by a command, the controls are provable on a screen, and the decisions are a separate surface with their own state.
+012 and 013 are what is left of the two features. Drafting was split across three slices because the endpoint is provable by a command, the controls are provable on a screen, and the decisions are a separate surface with their own state.
 
 014 to 016 close it out: what the project does not do, how someone else runs it, and the one claim it makes that should rest on measurement rather than assumption.
 
