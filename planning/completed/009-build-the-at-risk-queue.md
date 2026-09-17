@@ -1,7 +1,7 @@
 ---
 slice: 009
 title: Build the at-risk queue
-status: in progress
+status: complete
 depends_on: [006, 007, 008]
 decisions: [0004, 0005]
 ---
@@ -185,6 +185,46 @@ npx eslint
 EXIT=0
 ```
 
-**Still open.** The deployed queue, which needs a push.
+**The deployed queue matches.** Commit `83235b3`:
+
+```
+deployed queue: 46 rows, 19 High, 15 Medium, 12 Low
+bands in blocks, worst first: True
+High / Medium / Low price never rises: True
+no "1 days", no "1 times a week", no "came 0 days ago"
+filter options: 8
+```
+
+The wording fixes are in the deployed rows, so the rescore reached the database the deployment reads.
 
 ## Outcome
+
+Forty-six members in a band on one screen, worst first and by monthly price inside each band, each row
+carrying the reason the arithmetic produced. The site filter applies the parameter 008 had only carried.
+
+`lib/queue.ts` holds the two queries, `components/SiteFilter.tsx` the filter, and the screen is a Server
+Component awaiting both.
+
+Four decisions the slice left open, settled here.
+
+**The filter is links, not a control.** No client state, the filter lives in the URL so a narrowed queue
+can be sent to somebody, and each option shows the count it will narrow to before it is pressed. An
+unrecognised site falls back to the whole estate rather than to an empty page.
+
+**Band order and price order are fixed, not sortable.** The specification argues for both, and a column
+a reader can re-sort turns an argument into a default.
+
+**Tenure is measured to the scoring date, not to today**, so it agrees with the reading beside it instead
+of drifting a day at a time after a run.
+
+**The empty state says the queue is working.** A site with nobody in a band is the arithmetic finding
+nothing, not a gap, and the copy says so.
+
+The real work of this slice turned out to be the five wording defects. Four were in the scorer and had
+been sitting in the database since 006, invisible while the strings were checked one at a time and
+obvious the moment forty-six of them sat in a column. That is the argument for building the screen before
+the model: reading "Last came 0 days ago" on a row is what makes it a bug, and no test I would have
+thought to write in 006 would have caught it.
+
+Two things this slice does not do. Nothing tests the screen, per 0005. And High rows carry no controls:
+011 adds the drafting, 012 the decisions.
