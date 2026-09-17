@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+/* Minimal tokens so the placeholder is not unstyled. 007 settles the design language. */
+@theme {
+  --color-surface: #0f1115;
+  --color-raised: #161a21;
+  --color-ink: #e7e9ee;
+  --color-ink-dim: #8b929f;
+  --color-rule: #262b34;
+  --color-notice: #d8a657;
+}
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+}

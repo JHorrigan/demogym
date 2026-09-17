@@ -17,3 +17,7 @@ node_modules/
 
 # Claude Code local state
 .claude/settings.local.json
+
+# TypeScript build artefacts
+*.tsbuildinfo
+next-env.d.ts

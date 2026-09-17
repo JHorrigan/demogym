@@ -35,6 +35,7 @@ Applies to every word in the repository and every word on screen: documentation,
 Before writing code in a language, read the standard for that language. They are rules, not suggestions.
 
 - `standards/python.md`
+- `standards/nextjs.md`, which covers TypeScript, TSX and Tailwind
 
 A language gets its standard in the same commit as the decision that brings the language into the project.
 
