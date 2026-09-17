@@ -89,6 +89,12 @@ default, and the 27 was 25 Markdown files plus the 2 Python ones. The planning d
 not code under test, so `extend-exclude = ["*.md"]` keeps the formatter off them. Recorded because it
 changes what the gate covers.
 
+**`setup-uv` has no moving major tag.** The first workflow run failed with
+`Unable to resolve action astral-sh/setup-uv@v10, unable to find version v10`. The repository publishes
+bare major tags only up to `v7`; the v10 line exists as `v10.0.0`, `v10.0.1` and `v10.1.0` and there is
+no `v10` ref. The step is pinned to `astral-sh/setup-uv@v10.1.0`. `actions/checkout@v7` does have the
+moving tag and is left as it is.
+
 **CI.** Not yet verified. `.github/workflows/check.yml` runs `uv sync --locked` then `make check` on
 push, with no secrets. The condition stays open until a run on a pushed commit is green.
 
