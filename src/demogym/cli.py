@@ -47,11 +47,12 @@ def seed_estate(as_of: date, seed: int) -> None:
         existing = existing_counts(connection)
         if any(existing.values()):
             print(
-                f"Replacing {existing['sites']} sites, {existing['members']} members "
-                f"and {existing['entries']} entries."
+                f"Replacing {existing['sites']} sites, {existing['members']} members, "
+                f"{existing['equipment']} equipment units and {existing['entries']} entries."
             )
         written = replace(connection, as_of, seed)
 
     print(f"Wrote {written.sites} sites.")
     print(f"Wrote {written.members} members.")
+    print(f"Wrote {written.equipment} equipment units.")
     print(f"Wrote {written.entries} entries as of {as_of.isoformat()}, seed {seed}.")

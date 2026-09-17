@@ -7,6 +7,8 @@ from random import Random
 import psycopg
 
 from demogym.attendance import entries
+from demogym.equipment import Unit
+from demogym.equipment import generate as generate_equipment
 from demogym.members import Member, generate
 from demogym.sites import SITES
 
@@ -32,27 +34,35 @@ class Written:
     sites: int
     members: int
     entries: int
+    equipment: int
 
 
 def existing_counts(connection: psycopg.Connection) -> dict[str, int]:
     """Counts what is already there, so a replacement says what it replaced."""
     return {
         table: connection.execute(f"select count(*) from {table}").fetchone()[0]  # noqa: S608
-        for table in ("sites", "members", "entries")
+        for table in ("sites", "members", "entries", "equipment")
     }
 
 
 def replace(connection: psycopg.Connection, as_of: date, seed: int = SEED) -> Written:
     """Clears the estate and writes a freshly generated one in its place."""
     members = generate(as_of, Random(seed))
+    units = generate_equipment(as_of, Random(seed))
 
     with connection.transaction():
         connection.execute(f"truncate {', '.join(CLEARED_ON_RESEED)}")
         site_ids = _write_sites(connection)
         member_ids = _write_members(connection, members, site_ids)
         written = _write_entries(connection, members, member_ids, site_ids, as_of, Random(seed))
+        _write_equipment(connection, units, site_ids)
 
-    return Written(sites=len(site_ids), members=len(member_ids), entries=written)
+    return Written(
+        sites=len(site_ids),
+        members=len(member_ids),
+        entries=written,
+        equipment=len(units),
+    )
 
 
 def _write_sites(connection: psycopg.Connection) -> dict[str, int]:
@@ -105,3 +115,22 @@ def _write_entries(
                 copy.write_row((member_id, site_id, arrival))
                 written += 1
     return written
+
+
+def _write_equipment(
+    connection: psycopg.Connection, units: list[Unit], site_ids: dict[str, int]
+) -> None:
+    with connection.cursor().copy(
+        "copy equipment (site_id, name, category, installed_on, status, down_since) from stdin"
+    ) as copy:
+        for unit in units:
+            copy.write_row(
+                (
+                    site_ids[unit.site.name],
+                    unit.type.name,
+                    unit.type.category,
+                    unit.installed_on,
+                    unit.status,
+                    unit.down_since,
+                )
+            )
