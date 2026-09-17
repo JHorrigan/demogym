@@ -1,7 +1,7 @@
 ---
 slice: 013
 title: Build the site briefing
-status: backlog
+status: complete
 depends_on: [005, 008, 010, 011]
 decisions: [0004, 0005, 0007, 0008]
 ---
@@ -292,6 +292,121 @@ npx eslint
 EXIT=0
 ```
 
+**The deployed endpoint and screen.** Commit `4668b21`, against `https://demogym-ten.vercel.app`.
+Northgate, from a command:
+
+```
+Northgate  gpt-5.6-luna  in 1007  out 1056  cost 0.1469 cents  12.7s
+```
+
+Its two links, from the deployment rather than from a local run:
+
+```
+Sunday morning visits are now 10.7 a week, down 1.1 from 11.8, alongside 4 High and 7 Medium
+members. Worth checking whether any at-risk members are represented in that slot.
+
+The High band is valued at 149.96 pounds a month, alongside the air bike being out of service for
+3 days. Worth asking whether any High-band members use that equipment.
+```
+
+Parkhead, from the screen, starting empty:
+
+```
+before:        SITE BRIEFING | Written on request from Parkhead's own figures. Nothing until
+               somebody asks. | Write the briefing
+while writing: ... | Writing the briefing
+after 7s:      Written on 17 September from the figures above | Write it again |
+               At Parkhead, as of 2026-09-17, 8 of 42 members scored are at risk: 3 High, 3 Medium
+               and 2 Low ...
+```
+
+The row it wrote, and the header afterwards:
+
+```
+Parkhead 2026-09-17 gpt-5.6-luna in 1032 out 706 cost 0.1054 by hand 0.1054 match True
+header: 0.11 US cents, 1 call
+```
+
+Every refusal answers the same way as it does locally:
+
+```
+no token [401] forbidden   not an object [400] bad request   no site_id [400] bad request
+a site_id that is text [400] bad request   an unknown site [404] unknown site
+the cap spent [429] daily limit
+```
+
+And the panel sits where it belongs, at both phone widths:
+
+```
+on the unfiltered queue, a briefing panel: false
+on a site's queue, a briefing panel:       true
+320px: page 305 vs viewport 320   nothing overflows its box
+390px: page 375 vs viewport 390   nothing overflows its box
+```
+
+The briefings were deleted afterwards, so the deployment opens with nothing generated.
+
 ## Outcome
 
-Filled in when the slice moves to `completed/`.
+Both features exist. A briefing is written on request for one site from figures computed before the call:
+the bands and how they moved, the twelve-week direction, the attendance slots that have thinned, the
+equipment out of service and for how long, and what the High band is worth per month. It names the
+situation, orders who to contact first with a reason for each position, and states any link between the
+facts as something to check.
+
+`slots.py` holds the new arithmetic, `briefing_facts.py` assembles a site's facts from stored rows,
+`briefing_prompt.py` holds the instructions and the shape of the answer, `briefings.py` owns the table
+and `briefing_endpoint.py` decides what the endpoint answers. `SiteBriefing` renders it on a
+site-filtered queue.
+
+Five decisions the slice left open, settled here.
+
+**The two slot windows do not overlap**, which is where this departs from the decay ratio. For a member
+the question is how now compares with their own long-run normal, and the scorer answers it conservatively
+by leaving the recent weeks inside the baseline. For a slot the question is whether it changed, and a
+window that contains the change it is measuring answers that one badly. A test asserts the difference
+with numbers that can be checked by hand.
+
+**The projection is the High band, and its horizon is an assumption.** Six weeks is not measured and
+cannot be measured here: there are no cancellations to fit it against, and fitting it to the generator's
+own leavers would measure the generator rather than the rule, which is what 0005 rules out. The prompt
+says so and the briefings repeat it. Both revenue figures go into the prompt, the High band's and every
+banded member's, so a reader can trace either and neither quietly replaces the other on the estate
+screen.
+
+**Regenerating replaces the prose and adds the tokens.** One row per site per day is what the key 003
+chose allows. Keeping only the newest call's cost would drop a call that was billed out of a total this
+project calls measured. The row's counts are therefore everything spent on that site's briefing today,
+and the arithmetic still divides out by hand because price times tokens is linear.
+
+**The body is stored as prose and rendered as stored.** The model answers in three parts and the endpoint
+assembles them under headings. The column is `text` and now holds text, and what is on the screen is
+character-for-character what is in the row, which is the property that makes a briefing checkable at all.
+
+**A briefing belongs to a site, so the button is on a site's queue.** There is no estate-wide briefing:
+that is a different document for a different reader, and the person who would act on this one runs one
+site.
+
+Three things came out different from the plan.
+
+**The prompt needed two fixes that only reading the output would have found.** Every entry in the ordered
+list arrived numbered under a heading that numbers them, and the instruction that nothing is sent was
+being quoted back into the briefing as a sentence. The first is now asked for in the prompt and stripped
+in assembly, because the model sometimes numbers anyway; the second is written as a constraint rather
+than as a fact available for quoting. A third, smaller one padded the hypothesis list by pairing a figure
+with itself, and each entry now has to join a fact about members to a fact about slots or equipment.
+
+**The model call became generic.** A briefing and a draft share the pinned model, the pricing, the
+failure classification and the truncation rule, and differ only in what they ask for back. `generate`
+now takes the response shape, `Generated` carries whatever came back, and `Message` moved to sit beside
+the prompt that asks for it.
+
+**One test was not testing its own name.** The overlap test passed against a mutation that overlapped the
+windows, because it used a slot with no recent visits, so the count was the same either way. Rewritten
+with visits in both windows it fails against the overlap, and the rates it asserts are checkable by hand.
+That is the second time in this project a test has only earned its keep once it was watched to fail.
+
+Two things this slice does not do. Nothing here says whether a briefing is any good: there is no holdout
+group and no outcome to score it against, and 016 compares models on the constraint rather than on
+correctness. And the causation rule is held by a prompt and checked by a person reading eleven links,
+which is the honest description of the guarantee.
