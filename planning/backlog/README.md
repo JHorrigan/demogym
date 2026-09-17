@@ -6,19 +6,16 @@ A slice is written out in full shortly before it is built. Detailing all of them
 
 | | Slice | Written | Produces |
 |---|---|---|---|
-| 012 | Record decisions on a draft | | Approve, Edit and Reject, the edit diff, "Approved, not sent" |
 | 013 | Build the site briefing | | A briefing per site, generated on request |
 | 014 | Write the running-on-real-data page | | What this does not do, and the regulatory position |
 | 015 | Rewrite the README and write the running instructions | | A front door, and a way for someone else to run it |
 | 016 | Compare the drafting model | | A measured choice between the three candidates, recorded as an ADR |
 
-001 to 011 are done and sit in `completed/`. The data and the arithmetic are finished: the estate, the equipment and twelve weeks of scores are in Neon, with nineteen members in the High band at the most recent date. 004 was reopened by 006 as expected, and its file carries the amendment. The shell and the design language are in place, so the screens are layout rather than design. 010 put the model behind a deployed endpoint and 011 wired it to the queue, so the drafting feature is whole apart from the decision a person makes on what comes back.
+001 to 012 are done and sit in `completed/`. The data and the arithmetic are finished: the estate, the equipment and twelve weeks of scores are in Neon, with nineteen members in the High band at the most recent date. 004 was reopened by 006 as expected, and its file carries the amendment. The shell and the design language are in place, so the screens are layout rather than design. The drafting feature is whole: 010 put the model behind a deployed endpoint, 011 wired it to the queue, and 012 recorded what a person decided about what came back. 006 was amended after 011 found a scoring rule that misfired on members inside twelve weeks.
 
 ## Where the order comes from
 
-012 first of what remains. It is the last part of the drafting feature and the one the whole human-in-the-loop argument rests on: a message exists on the screen and nothing has happened to it yet.
-
-012 and 013 are what is left of the two features. Drafting was split across three slices because the endpoint is provable by a command, the controls are provable on a screen, and the decisions are a separate surface with their own state.
+013 first of what remains, and the last feature. It is the second domain the equipment data exists for, and it is the harder prompt: a briefing has to state a link between facts as a hypothesis to check rather than as a finding, which is the constraint 0007 says to stress hardest.
 
 014 to 016 close it out: what the project does not do, how someone else runs it, and the one claim it makes that should rest on measurement rather than assumption.
 

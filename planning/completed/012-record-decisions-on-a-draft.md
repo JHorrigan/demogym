@@ -1,7 +1,7 @@
 ---
 slice: 012
 title: Record decisions on a draft
-status: backlog
+status: complete
 depends_on: [010, 011]
 decisions: [0004, 0005, 0006, 0008]
 ---
@@ -187,6 +187,113 @@ npx eslint
 EXIT=0
 ```
 
+**The deployed screen and endpoint.** Commit `465b850`, against `https://demogym-ten.vercel.app`. All
+three decisions, from the browser:
+
+```
+Approve  M00020  Approved, not sent              | 17 September at 20:16   buttons left: []
+Edit     M00054  Approved with an edit, not sent | 17 September at 20:17   buttons left: []
+Reject   M00198  Rejected                        | 17 September at 20:17   buttons left: []
+
+header after the edit: 1 of 2 edited before approval    0.13 US cents, 2 calls
+```
+
+The deployed edit was a pure insertion, and the marking says exactly that:
+
+```
+marked as removed: []
+marked as added:   ["personally "]
+```
+
+The stored rows, with the timestamps the database stamped:
+
+```
+(1820, 1, 'approved', edited_body None,  2026-09-17 19:16:37 GMT)
+(1854, 1, 'edited',   edited_body set,   2026-09-17 19:17:04 GMT)
+approvals, edited: (2, 1)
+every decision has a timestamp: True
+decisions: [('approved', 1), ('edited', 1), ('rejected', 1)]
+```
+
+19:16 GMT is 20:16 in the estate's clock, which is what the row shows. The rejection is not counted as
+an approval, which is why the share stayed at 1 of 2.
+
+Every refusal answers the same way on the deployment as it does locally:
+
+```
+no token                      [401] forbidden       an approval carrying an edit  [400] bad request
+an action outside the three   [400] bad request     an edit with no body          [400] bad request
+a member with no draft        [404] nothing drafted an unknown member             [404] nothing drafted
+a second decision             [409] already decided drafting a decided member     [409] already decided
+```
+
+Phone widths with a decided panel and an edit on the page:
+
+```
+320px: page 305 vs viewport 320   nothing overflows its box
+390px: page 375 vs viewport 390   nothing overflows its box
+```
+
+The three evidence drafts were deleted afterwards, so the deployed queue opens with nothing in it and
+reads 45 members, 18 High, 16 Medium, 11 Low.
+
 ## Outcome
 
-Filled in when the slice moves to `completed/`.
+A person decides, and the decision is recorded. Approve, Edit and Reject sit on the panel of a drafted
+member, a decided panel says which one happened and when in place of the drafting state, an edit is
+shown with the change marked inside the message, and the header carries how many approvals needed an
+edit.
+
+`decisions.py` holds the three actions and the boundary checks, `decide_endpoint.py` decides what the
+endpoint answers, and the write lands in the `decision`, `edited_body` and `decided_at` columns 003
+created without a migration. `api/decide.py` is six lines, because the HTTP glue moved to
+`json_endpoint.py` where both endpoints share it. On the screen, `Decision`, `DecisionControls`,
+`EditAgainstDraft` and `ApprovalReadout` are the new pieces.
+
+Six decisions the slice left open, settled here.
+
+**A decision belongs to the member, not to an attempt.** Approve, Edit or Reject on any draft closes
+that member: no second decision, and no redraft afterwards. The column would allow one decision per
+attempt, which would let a member carry two approvals and would make the edit share a count of drafts
+rather than of members. The drafting endpoint enforces the second half of that, so it holds against a
+stale page rather than only against the interface.
+
+**The endpoint chooses the attempt and stamps the time.** A caller names a member and an action, exactly
+as the drafting endpoint takes a member and three settings. A page that has been open while a redraft
+happened elsewhere cannot record a decision against the draft it remembers.
+
+**An edit that changes nothing is refused rather than stored.** It is an approval, and recording it as an
+edit would inflate the one quality figure this project claims. The save button is disabled for the same
+reason, and says why.
+
+**The edit replaces the original in place rather than sitting beneath it.** The first version printed the
+message twice, once plain and once marked, and a screenshot made it obvious that this hides the change
+rather than showing it. Both versions are still on the screen: the struck words are the model's.
+
+**The marking matches unchanged words in from both ends.** Anything shown as unchanged is
+character-for-character the same in both versions. A scattered edit widens the marked span to cover
+everything between the changes, which over-reports rather than under-reports. The alternative was a real
+alignment algorithm in TypeScript, which 0005 leaves untested, and a diff that quietly misaligns on a
+screen whose whole argument is honesty is worse than one that says "this span changed".
+
+**The share is counts, not a percentage.** Two approvals do not support a percentage, and 50% on a
+denominator of two implies precision that is not there. Before the first approval it reads "None yet"
+rather than a zero that looks like a measurement.
+
+Two things came out different from the plan.
+
+**The HTTP glue was shared rather than copied.** `api/decide.py` would have been a second copy of
+`api/draft.py`'s twenty lines of request reading and response writing, and 013 would have made a third.
+`JsonEndpoint` holds it once and each endpoint supplies only `answer`. The development server routes both
+paths through the same class, so there is still one HTTP implementation rather than a real one and a
+local one.
+
+**The edited body is the one free-text field in the project.** 0008 keeps free text out of prompts, and
+this text never reaches a model: it is stored beside the draft, rendered by React which escapes it, and
+bounded at four thousand characters at the boundary. Worth stating plainly, because "nothing reaching the
+model is free text" and "nothing in this project accepts free text" are different claims and only the
+first one is true.
+
+Two things this slice does not do. Nothing tests the screen, per 0005. And a decision cannot be undone:
+the schema records one decision per draft with no history, and a reviewer who wants a different answer
+has Reject for it.
