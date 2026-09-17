@@ -208,6 +208,12 @@ Each of these was considered and left out because the data behind it is not some
 
 And of the system itself: no contact suppression or frequency cap behind the approve button, no holdout group so effectiveness cannot be claimed, no seasonality model, no authentication beyond a shared link token, members under four weeks unscored, no accuracy figure and the reason why, and data only as fresh as the seed.
 
+Two claims about this system are narrower than they first sound, and the real-data page says so rather than leaving them to be discovered.
+
+**Nothing reaching the model is free text, but the system does accept free text.** The body a reviewer edits before approving is typed by a person. It is stored beside what the model wrote, shown against it, bounded in length at the boundary, and it never reaches a model. "No free text in a prompt" is true; "no free text anywhere" is not.
+
+**The briefing's rule against claiming a cause is held by a prompt.** There is no check in code that a briefing has not asserted causation, and there could not easily be one. What exists is an explicit instruction, and a person reading the output: 013 read eleven links across six briefings and quoted every one. On a real deployment that is a review step, not a guarantee.
+
 ## Running this on real data
 
 **What it would connect to.** Access control and turnstile scans, which is the feed that replaces `entries`. Membership and billing, for plan, price, join and leave dates. The asset register, for equipment. Class booking and CRM, so an intervention is delivered, suppressed or attributed.
