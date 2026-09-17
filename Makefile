@@ -1,4 +1,4 @@
-.PHONY: check lint test typecheck lint-web format
+.PHONY: check lint test typecheck lint-web format migrate
 
 check: lint test typecheck lint-web
 
@@ -18,3 +18,7 @@ lint-web:
 format:
 	uv run ruff format .
 	uv run ruff check --fix .
+
+# Applies pending migrations to the database named in the local environment file.
+migrate:
+	uv run --env-file .env demogym migrate

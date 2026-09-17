@@ -6,7 +6,6 @@ A slice is written out in full shortly before it is built. Detailing all of them
 
 | | Slice | Written | Produces |
 |---|---|---|---|
-| 003 | Create the schema and the migration runner | yes | Seven tables in Neon |
 | 004 | Generate and seed the estate | yes | Sites, members and six months of entries |
 | 005 | Generate and seed the equipment | yes | Around a hundred units across the six sites |
 | 006 | Score the estate | yes | `risk_scores` at twelve weekly dates, around twenty in the High band |
@@ -21,11 +20,11 @@ A slice is written out in full shortly before it is built. Detailing all of them
 | 015 | Rewrite the README and write the running instructions | | A front door, and a way for someone else to run it |
 | 016 | Compare the drafting model | | A measured choice between the three candidates, recorded as an ADR |
 
-001 and 002 are done and sit in `completed/`. Between them they settled the Python version the Vercel runtime offers, and found that Vercel builds this repository as a Python project unless `vercel.json` says otherwise.
+001 to 003 are done and sit in `completed/`. Between them they settled the Python version the Vercel runtime offers, found that Vercel builds this repository as a Python project unless `vercel.json` says otherwise, and put the seven tables in Neon.
 
 ## Where the order comes from
 
-003 first of what remains. 003 to 006 build the data and the arithmetic, in the only order they can go in. 006 is where the generator's spread gets tuned against the scoring thresholds, so 004 and 006 will be revisited together.
+004 first of what remains. 004 to 006 build the data and the arithmetic on the schema 003 created, in the only order they can go in. 006 is where the generator's spread gets tuned against the scoring thresholds, so 004 and 006 will be revisited together.
 
 007 sits between the data and the screens deliberately. Built after it, 008 and 009 are layout against decisions already made. Built without it, each screen invents its own look and the result reads as three different tools.
 
