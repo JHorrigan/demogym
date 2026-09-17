@@ -3,7 +3,8 @@ export type DraftStatus = "not drafted" | "drafting" | "drafted" | "failed";
 /** Why a call did not produce a message. Which one it was decides what to offer. */
 export type Failure = "unreachable" | "no credit" | "daily limit";
 
-const FAILURE: Record<Failure, { heading: string; detail: string; fault: boolean }> = {
+/** Shared with the briefing, so the three messages exist once. */
+export const FAILURE: Record<Failure, { heading: string; detail: string; fault: boolean }> = {
   unreachable: {
     heading: "Could not reach the model",
     detail: "Transient. Worth trying again.",

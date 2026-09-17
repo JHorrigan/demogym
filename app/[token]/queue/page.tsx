@@ -1,9 +1,11 @@
 import Band from "@/components/Band";
 import DraftQueue from "@/components/DraftQueue";
 import type { PanelRow } from "@/components/MemberPanel";
+import SiteBriefing from "@/components/SiteBriefing";
 import SiteFilter from "@/components/SiteFilter";
 import { Cell, HeaderCell, Row, Table } from "@/components/Table";
 import { Empty } from "@/components/States";
+import { latestBriefing } from "@/lib/briefings";
 import { storedDrafts } from "@/lib/drafts";
 import { queueRows, siteCounts, type QueueRow } from "@/lib/queue";
 
@@ -25,6 +27,7 @@ export default async function Queue({
   const selected = selectedSite(site, sites.map((option) => option.id));
   const rows = await queueRows(selected);
   const stored = await storedDrafts();
+  const briefing = selected === null ? null : await latestBriefing(selected);
 
   const high = rows.filter((row) => row.band === "high");
   const rest = rows.filter((row) => row.band !== "high");
@@ -67,6 +70,15 @@ export default async function Queue({
             <span className="figure">{counts.medium}</span> Medium,{" "}
             <span className="figure">{counts.low}</span> Low.
           </p>
+
+          {selected !== null && siteName ? (
+            <SiteBriefing
+              token={token}
+              siteId={selected}
+              siteName={siteName}
+              stored={briefing}
+            />
+          ) : null}
 
           <section className="space-y-4 pt-2">
             <div>

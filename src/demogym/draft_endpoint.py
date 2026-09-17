@@ -17,7 +17,7 @@ from demogym.cap import DAILY_LIMIT, reserve
 from demogym.drafting import MAXIMUM_ATTEMPTS, parse
 from demogym.drafts import LOCAL, candidate, store
 from demogym.model import NO_CREDIT, UNREACHABLE, ModelFailed, generate
-from demogym.prompt import system, user
+from demogym.prompt import Message, system, user
 
 FORBIDDEN = "forbidden"
 BAD_REQUEST = "bad request"
@@ -93,6 +93,7 @@ def respond(
                 make_client(),
                 system(),
                 user(found.facts, request.controls, found.scored_on),
+                Message,
             )
         except ModelFailed as failed:
             return _refuse(failed.state, failed.detail)
@@ -107,9 +108,9 @@ def respond(
         "tone": request.controls.tone,
         "length": request.controls.length,
         "offer": request.controls.offer,
-        "subject": generated.message.subject,
-        "body": generated.message.body,
-        "rationale": generated.message.rationale,
+        "subject": generated.output.subject,
+        "body": generated.output.body,
+        "rationale": generated.output.rationale,
         "model": generated.model,
         "input_tokens": generated.input_tokens,
         "output_tokens": generated.output_tokens,

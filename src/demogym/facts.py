@@ -82,7 +82,7 @@ def usual_time(visits: list[datetime]) -> str | None:
     """The part of the day they came in most often, or None if they did not come."""
     if not visits:
         return None
-    counts = Counter(_part_of_day(visit) for visit in visits)
+    counts = Counter(part_of_day(visit) for visit in visits)
     return max(counts, key=lambda part: (counts[part], -_PARTS.index(part)))
 
 
@@ -105,7 +105,8 @@ _WEEKDAYS = [
 _PARTS = ["morning", "afternoon", "evening"]
 
 
-def _part_of_day(visit: datetime) -> str:
+def part_of_day(visit: datetime) -> str:
+    """Morning, afternoon or evening, split at noon and five."""
     if visit.hour < MORNING_ENDS:
         return "morning"
     return "afternoon" if visit.hour < AFTERNOON_ENDS else "evening"

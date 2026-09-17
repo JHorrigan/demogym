@@ -12,12 +12,12 @@ from demogym.model import (
     NO_CREDIT,
     REFUSED,
     UNREACHABLE,
-    Message,
     ModelFailed,
     classify,
     cost_in_cents,
     generate,
 )
+from demogym.prompt import Message
 
 REQUEST = httpx2.Request("POST", "https://api.openai.com/v1/responses")
 
@@ -79,8 +79,8 @@ def completed_response() -> SimpleNamespace:
 
 
 def test_a_finished_message_carries_its_own_token_counts_and_cost():
-    generated = generate(fake_client(completed_response()), "rules", "facts")
-    assert generated.message.subject == "A quiet fortnight"
+    generated = generate(fake_client(completed_response()), "rules", "facts", Message)
+    assert generated.output.subject == "A quiet fortnight"
     assert (generated.input_tokens, generated.output_tokens) == (900, 200)
     assert generated.cost_usd_cents == Decimal("0.0420")
     assert generated.model == MODEL
@@ -90,7 +90,7 @@ def test_a_message_that_stopped_at_the_ceiling_is_discarded():
     truncated = completed_response()
     truncated.status = "incomplete"
     with pytest.raises(ModelFailed) as failed:
-        generate(fake_client(truncated), "rules", "facts")
+        generate(fake_client(truncated), "rules", "facts", Message)
     assert failed.value.state == UNREACHABLE
 
 
@@ -101,7 +101,7 @@ def test_a_refused_call_raises_the_state_the_row_should_show():
         )
     )
     with pytest.raises(ModelFailed) as failed:
-        generate(client, "rules", "facts")
+        generate(client, "rules", "facts", Message)
     assert failed.value.state == NO_CREDIT
 
 
@@ -110,7 +110,7 @@ def test_a_refusal_does_not_repeat_the_provider_back_to_the_reader():
     error = status_error(AuthenticationError, "invalid_api_key", 401)
     client = SimpleNamespace(responses=SimpleNamespace(parse=_raising(error)))
     with pytest.raises(ModelFailed) as failed:
-        generate(client, "rules", "facts")
+        generate(client, "rules", "facts", Message)
     assert failed.value.detail == REFUSED[UNREACHABLE]
     assert "invalid_api_key" not in failed.value.detail
 

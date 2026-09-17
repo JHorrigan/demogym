@@ -22,10 +22,11 @@ PORT = 5328
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "api"))
 
+from briefing import handler as briefing  # noqa: E402
 from decide import handler as decide  # noqa: E402
 from draft import handler as draft  # noqa: E402
 
-ROUTES = {"/api/draft": draft, "/api/decide": decide}
+ROUTES = {"/api/draft": draft, "/api/decide": decide, "/api/briefing": briefing}
 
 
 class router(JsonEndpoint):  # noqa: N801

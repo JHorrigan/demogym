@@ -1,4 +1,4 @@
-"""Turns facts and three dropdown settings into the prompt the model is sent.
+"""What the drafting call asks for, and what shape it expects back.
 
 Assembly only. Every value placed in the prompt arrived as a number this project
 computed or as an option somebody picked from a list, so there is no path from a
@@ -7,8 +7,19 @@ reader's typing to the model.
 
 from datetime import date
 
+from pydantic import BaseModel
+
 from demogym.drafting import WORDS, Controls
 from demogym.facts import Facts
+
+
+class Message(BaseModel):
+    """What the model returns: the message, and why it was written that way."""
+
+    subject: str
+    body: str
+    rationale: str
+
 
 SYSTEM = """You write short retention messages for a gym chain.
 

@@ -40,19 +40,16 @@ log = logging.getLogger(__name__)
 BILLING_CODES = frozenset({"insufficient_quota", "billing_hard_limit_reached"})
 
 
-class Message(BaseModel):
-    """What the model returns: the message, and why it was written that way."""
-
-    subject: str
-    body: str
-    rationale: str
-
-
 @dataclass(frozen=True)
-class Generated:
-    """One message and what the call that produced it cost."""
+class Generated[T: BaseModel]:
+    """What one call produced and what it cost.
 
-    message: Message
+    The shape of `output` belongs to the feature that asked for it, so a draft and a
+    briefing share the call, the pricing and the failure states without sharing a
+    response type.
+    """
+
+    output: T
     model: str
     input_tokens: int
     output_tokens: int
@@ -68,7 +65,9 @@ class ModelFailed(Exception):
         self.detail = detail
 
 
-def generate(client: OpenAI, instructions: str, facts: str) -> Generated:
+def generate[T: BaseModel](
+    client: OpenAI, instructions: str, facts: str, shape: type[T]
+) -> Generated[T]:
     """Calls the pinned model once, or raises ModelFailed saying which state it is.
 
     No retry is added here. The installed client already retries connection errors,
@@ -81,7 +80,7 @@ def generate(client: OpenAI, instructions: str, facts: str) -> Generated:
             model=MODEL,
             instructions=instructions,
             input=facts,
-            text_format=Message,
+            text_format=shape,
             max_output_tokens=MAX_OUTPUT_TOKENS,
         )
     except OpenAIError as error:
@@ -97,7 +96,7 @@ def generate(client: OpenAI, instructions: str, facts: str) -> Generated:
 
     usage = response.usage
     return Generated(
-        message=response.output_parsed,
+        output=response.output_parsed,
         model=response.model,
         input_tokens=usage.input_tokens,
         output_tokens=usage.output_tokens,
