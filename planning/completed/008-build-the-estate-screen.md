@@ -1,7 +1,7 @@
 ---
 slice: 008
 title: Build the estate screen
-status: in progress
+status: complete
 depends_on: [006, 007]
 decisions: [0002, 0004, 0005]
 ---
@@ -164,9 +164,25 @@ npx eslint
 EXIT=0
 ```
 
-**Still open.** The deployed screen. The deployment is serving the 007 build, confirmed by it still
-carrying "estate table lands in the next slice", because this work has not been pushed. It will also need
-`DATABASE_URL` as a Vercel project environment variable, which nothing before this slice required.
+**The deployed screen reads Neon.** Commit `b17d2fc`, CI green, `DATABASE_URL` added as a Vercel project
+environment variable. All six rows on the deployed page, with the twelve readings from each accessible
+label:
+
+```
+Meadowbank     26.5%   9 of 34   +5.9 pp   6.7, 13.3, 13.3, 13.3, 17.2, 20.7, 20.0, 13.3, 25.8, 16.1, 20.6, 26.5
+Northgate      19.3%  11 of 57   -4.4 pp   15.1, 15.1, 20.4, 20.4, 12.7, 14.0, 16.1, 13.8, 22.4, 25.9, 23.7, 19.3
+Parkhead       19.0%   8 of 42   -4.8 pp   18.9, 18.9, 16.2, 18.9, 15.4, 15.0, 22.5, 27.5, 29.3, 28.6, 23.8, 19.0
+Kingsway       15.4%   8 of 52   -5.8 pp   11.9, 16.7, 9.5, 4.8, 4.5, 4.3, 10.2, 17.3, 21.2, 23.5, 21.2, 15.4
+Riverside      14.0%   6 of 43   -8.8 pp   15.8, 12.8, 20.5, 17.9, 10.0, 25.0, 21.4, 21.4, 23.8, 14.6, 22.7, 14.0
+Castle Street  11.4%   4 of 35   -5.2 pp   13.2, 16.2, 8.1, 5.4, 15.8, 13.2, 24.3, 25.0, 16.7, 13.9, 16.7, 11.4
+```
+
+Those readings cross-check the shared scale: Kingsway's 4.3% is the floor and Parkhead's 29.3% the
+ceiling, which is the band the note under the table names. Six polylines rendered, the site links carry
+the deployed token, `?site=42` reaches the queue and it says Meadowbank.
+
+The gate and the headers from 002 still hold over the new routes: `x-robots-tag: noindex, nofollow` and
+`referrer-policy: no-referrer` on the estate screen, and the root without a token still returns 401.
 
 ## Outcome
 
