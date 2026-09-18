@@ -105,6 +105,18 @@ The check gate is `ruff`, `pytest`, `tsc` and `eslint`, in that order, stopping 
 make check
 ```
 
+It needs no database, no key and no network. Nothing in it verifies that a deployed page renders,
+because a typecheck is not a render, so that is a separate command:
+
+```
+make smoke                                          # against the deployment
+uv run --env-file .env python scripts/smoke.py http://localhost:3000
+```
+
+It fetches every screen, checks that each one carries the synthetic-data strip, the cost readout and
+content read out of the database, and probes each endpoint with an empty body, which is refused before
+any model call. It writes nothing.
+
 ## What it deliberately does not do
 
 There is no holdout group, so no claim that the intervention works. There is no contact suppression,

@@ -1,4 +1,4 @@
-.PHONY: check lint test typecheck lint-web format migrate api
+.PHONY: check lint test typecheck lint-web format migrate api smoke
 
 check: lint test typecheck lint-web
 
@@ -30,3 +30,8 @@ api:
 # Applies pending migrations to the database named in the local environment file.
 migrate:
 	uv run --env-file .env demogym migrate
+
+# Checks that the deployed application renders. Needs the network and the token, which
+# is why it is not part of `make check`. See 0005.
+smoke:
+	uv run --env-file .env python scripts/smoke.py
