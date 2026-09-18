@@ -6,14 +6,11 @@ A slice is written out in full shortly before it is built. Detailing all of them
 
 | | Slice | Written | Produces |
 |---|---|---|---|
-| 015 | Rewrite the README and write the running instructions | | A front door, and a way for someone else to run it |
 | 016 | Compare the drafting model | | A measured choice between the three candidates, recorded as an ADR |
 
-001 to 014 are done and sit in `completed/`. The data and the arithmetic are finished: the estate, the equipment and twelve weeks of scores are in Neon, with eighteen members in the High band at the most recent date. 004 was reopened by 006 as expected, and its file carries the amendment. Both features are built and both screens they live on are finished. 010 put the model behind a deployed endpoint, 011 wired it to the queue, 012 recorded what a person decided about what came back, and 013 wrote the briefing that the equipment data exists for. 014 wrote the third screen, which is the one that says what none of this does.
+001 to 015 are done and sit in `completed/`. The data and the arithmetic are finished: the estate, the equipment and twelve weeks of scores are in Neon, with eighteen members in the High band at the most recent date. 004 was reopened by 006 as expected, and its file carries the amendment. Both features are built and both screens they live on are finished. 010 put the model behind a deployed endpoint, 011 wired it to the queue, 012 recorded what a person decided about what came back, and 013 wrote the briefing that the equipment data exists for. 014 wrote the third screen, which is the one that says what none of this does, and 015 made the README describe the project that exists.
 
 ## Where the order comes from
-
-015 is the front door. It comes after 014 because the README points at that page rather than repeating it, and there is no sense writing the pointer before the page exists.
 
 016 is last because it is the only claim in the project that should rest on measurement rather than assumption, and the briefing it measures had to exist first.
 
