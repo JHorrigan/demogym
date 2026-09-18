@@ -144,10 +144,14 @@ export default function RealData() {
           the reading governs, or a floor under the typical gap, and neither is decided.
         </Note>
 
-        <Note statement="Which model should write these.">
-          One model is pinned by ID so that runs are reproducible. Whether a cheaper or a larger one
-          holds the briefing constraint better is a question for measurement rather than assumption,
-          and it has not been measured yet.
+        <Note statement="The model was chosen by measurement, over a small sample.">
+          One model is pinned by ID so that runs are reproducible, and a cheaper one and a larger one
+          were run over the same six members and the same six sites to check the choice. The pin
+          stands: at the token ceiling this project sets, neither candidate finished every call, both
+          used an em dash against an instruction that names it, and the cheaper one cost more to run
+          because it spends far more tokens reasoning. Six members and six sites is a small sample,
+          and the measure is how often an output broke a stated rule rather than which one a reader
+          preferred.
         </Note>
       </Section>
     </div>

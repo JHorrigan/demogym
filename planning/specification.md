@@ -146,7 +146,7 @@ Everything the model is given was derived by code that can be read and checked. 
 
 ## Model and cost
 
-The build uses `gpt-5.6-luna` with a pinned model ID so runs are reproducible, for drafting, for briefings and for any redraft. Which model is right is left to measurement rather than assumption, and a later slice compares it against `gpt-5-nano` below and `gpt-5-mini` above on the same members, judged on how often a person had to edit the output. See 0007.
+The build uses `gpt-5.6-luna` with a pinned model ID so runs are reproducible, for drafting, for briefings and for any redraft. Which model is right was settled by measurement rather than assumption. 016 ran `gpt-5-nano` below and `gpt-5-mini` above over the same members and the same sites, and the pin stands: at this project's token ceiling neither candidate finishes every call, both use an em dash against an instruction that names it, and the cheaper one costs more to run than the incumbent because it spends far more tokens reasoning. See 0007 and 0009.
 
 Token counts come back on every call and are written to the row that produced them. Cost is measured from the API response, never estimated, and the running total is shown in the interface. A full sweep is about twenty drafts, up to twenty redrafts and six briefings. Forty-six calls, roughly two and a half pence, so cost is not a constraint here. It is shown because an operator running dozens of sites asks what this costs per member per month before they ask anything else.
 
@@ -222,5 +222,4 @@ Two claims about this system are narrower than they first sound, and the real-da
 
 ## Still open
 
-- Whether a cheaper or larger model holds the briefing constraint better, settled by the comparison slice rather than in advance.
 - **Whether the gap reading needs a minimum-data guard of its own.** The minimum-baseline guard protects the decay ratio from thin history and nothing protects the typical gap. A member with two visits in the window, a day apart, has a median gap of one day, so a month of silence reads as thirty times their usual gap. 006 found this by running the rule rather than reading it, and settled it in the generator: members attend on a small set of spaced days rather than by an independent draw each morning, which is a better model of how people train and leaves almost nothing resting on two or three gaps. That removes the symptom from this dataset. On real data the case would recur, and the options are a minimum number of gaps before the reading governs, or a floor under the typical gap. Neither is decided, and the thresholds in the band table were left where they are.

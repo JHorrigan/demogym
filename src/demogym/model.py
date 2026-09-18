@@ -10,13 +10,20 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from openai import APIStatusError, OpenAI, OpenAIError
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 MODEL = "gpt-5.6-luna"
 
-# Published prices per million tokens, from 0007.
-INPUT_USD_PER_MILLION = Decimal("0.20")
-OUTPUT_USD_PER_MILLION = Decimal("1.20")
+# Published prices per million tokens, input then output, from 0007. The incumbent and
+# the two candidates 016 measures it against. A model with no price here cannot be
+# costed, and a cost this project calls measured is never estimated.
+PRICES = {
+    "gpt-5-nano": (Decimal("0.05"), Decimal("0.40")),
+    "gpt-5.6-luna": (Decimal("0.20"), Decimal("1.20")),
+    "gpt-5-mini": (Decimal("0.25"), Decimal("2.00")),
+}
+
+INPUT_USD_PER_MILLION, OUTPUT_USD_PER_MILLION = PRICES[MODEL]
 
 # A standard draft is about 120 words. This is a long way above that, so hitting it
 # means something went wrong rather than that the message was ambitious.
@@ -66,7 +73,12 @@ class ModelFailed(Exception):
 
 
 def generate[T: BaseModel](
-    client: OpenAI, instructions: str, facts: str, shape: type[T]
+    client: OpenAI,
+    instructions: str,
+    facts: str,
+    shape: type[T],
+    model: str = MODEL,
+    ceiling: int = MAX_OUTPUT_TOKENS,
 ) -> Generated[T]:
     """Calls the pinned model once, or raises ModelFailed saying which state it is.
 
@@ -77,11 +89,11 @@ def generate[T: BaseModel](
     """
     try:
         response = client.responses.parse(
-            model=MODEL,
+            model=model,
             instructions=instructions,
             input=facts,
             text_format=shape,
-            max_output_tokens=MAX_OUTPUT_TOKENS,
+            max_output_tokens=ceiling,
         )
     except OpenAIError as error:
         # The provider's own words go to the log, where whoever ran this can read
@@ -90,6 +102,13 @@ def generate[T: BaseModel](
         log.warning("the model refused a call: %s", error)
         state = classify(error)
         raise ModelFailed(state, REFUSED[state]) from error
+    except ValidationError as unparsable:
+        # A structured answer cut off at the ceiling is parsed before its status can
+        # be read, so truncation arrives as a parse failure and never reaches the
+        # check below. The SDK documents this: invalid JSON still raises. 016 found it
+        # by running a model that spent its whole budget reasoning.
+        log.warning("the model returned an answer that would not parse: %s", unparsable)
+        raise ModelFailed(UNREACHABLE, TRUNCATED) from unparsable
 
     if response.status == "incomplete":
         raise ModelFailed(UNREACHABLE, TRUNCATED)
@@ -100,7 +119,7 @@ def generate[T: BaseModel](
         model=response.model,
         input_tokens=usage.input_tokens,
         output_tokens=usage.output_tokens,
-        cost_usd_cents=cost_in_cents(usage.input_tokens, usage.output_tokens),
+        cost_usd_cents=cost_in_cents(usage.input_tokens, usage.output_tokens, model),
     )
 
 
@@ -115,9 +134,12 @@ def classify(error: OpenAIError) -> str:
     return UNREACHABLE
 
 
-def cost_in_cents(input_tokens: int, output_tokens: int) -> Decimal:
-    """What a call cost in US cents, to the four places the column stores."""
-    usd = (input_tokens * INPUT_USD_PER_MILLION + output_tokens * OUTPUT_USD_PER_MILLION) / Decimal(
-        1_000_000
-    )
+def cost_in_cents(input_tokens: int, output_tokens: int, model: str = MODEL) -> Decimal:
+    """What a call cost in US cents, to the four places the column stores.
+
+    Priced against the model that was asked for rather than the snapshot that answered,
+    so the figure matches a published price a reader can look up.
+    """
+    price_in, price_out = PRICES[model]
+    usd = (input_tokens * price_in + output_tokens * price_out) / Decimal(1_000_000)
     return (usd * 100).quantize(Decimal("0.0001"))

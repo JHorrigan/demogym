@@ -6,11 +6,13 @@ from types import SimpleNamespace
 import httpx2
 import pytest
 from openai import APIConnectionError, APITimeoutError, AuthenticationError, RateLimitError
+from pydantic import ValidationError
 
 from demogym.model import (
     MODEL,
     NO_CREDIT,
     REFUSED,
+    TRUNCATED,
     UNREACHABLE,
     ModelFailed,
     classify,
@@ -120,3 +122,21 @@ def _raising(error):
         raise error
 
     return parse
+
+
+def test_an_answer_cut_off_mid_json_is_discarded_rather_than_raised():
+    """The real shape of truncation for a structured answer.
+
+    `responses.parse` validates before the caller can read `status`, so a message that
+    stopped at the token ceiling arrives as a pydantic error rather than as an
+    incomplete status. Without this, a reviewer gets a stack trace instead of a row
+    that says the message was discarded.
+    """
+    with pytest.raises(ValidationError) as invalid:
+        Message.model_validate_json('{"subject":"A quiet fortnig')
+
+    client = SimpleNamespace(responses=SimpleNamespace(parse=_raising(invalid.value)))
+    with pytest.raises(ModelFailed) as failed:
+        generate(client, "rules", "facts", Message)
+    assert failed.value.state == UNREACHABLE
+    assert failed.value.detail == TRUNCATED
